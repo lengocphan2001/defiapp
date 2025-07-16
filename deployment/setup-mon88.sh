@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Smart Mall DApp Setup for coincexbot.com
+# Smart Mall DApp Setup for mon88.click
 # This script configures the deployment for your specific domain
 
 set -e
@@ -24,7 +24,7 @@ print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-print_status "Setting up Smart Mall DApp for coincexbot.com..."
+print_status "Setting up Smart Mall DApp for mon88.click..."
 
 # Check if running as root
 if [ "$EUID" -ne 0 ]; then
@@ -33,13 +33,14 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Update nginx configuration
-print_status "Updating nginx configuration for coincexbot.com..."
-sed -i "s/your-domain.com/$DOMAIN/g" deployment/nginx.conf
+print_status "Updating nginx configuration for mon88.click..."
+sed -i "s/coincexbot.com/$DOMAIN/g" deployment/nginx.conf
+sed -i "s/coincexbot.com/$DOMAIN/g" deployment/nginx-no-ssl.conf
 
 # Update deployment script
 print_status "Updating deployment script..."
-sed -i "s/your-domain.com/$DOMAIN/g" deployment/deploy.sh
-sed -i "s/your-email@example.com/$EMAIL/g" deployment/deploy.sh
+sed -i "s/coincexbot.com/$DOMAIN/g" deployment/deploy.sh
+sed -i "s/admin@coincexbot.com/$EMAIL/g" deployment/deploy.sh
 
 # Create production environment template
 print_status "Creating production environment template..."
@@ -50,8 +51,8 @@ NODE_ENV=production
 
 # Database Configuration
 DB_HOST=localhost
-DB_USER=defiapp_user
-DB_PASSWORD=CHANGE_THIS_PASSWORD
+DB_USER=root
+DB_PASSWORD=password
 DB_NAME=defiapp
 DB_PORT=3306
 

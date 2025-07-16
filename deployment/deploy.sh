@@ -10,7 +10,7 @@ APP_NAME="smart-mall-app"
 APP_DIR="/var/www/$APP_NAME"
 BACKEND_DIR="$APP_DIR/backend"
 FRONTEND_DIR="$APP_DIR/frontend"
-DOMAIN="coincexbot.com"
+DOMAIN="mon88.click"
 DB_NAME="defiapp"
 DB_USER="root"
 DB_PASSWORD="password"
@@ -133,7 +133,7 @@ nginx -t
 
 # Setup SSL certificate
 print_status "Setting up SSL certificate..."
-certbot --nginx -d coincexbot.com -d www.coincexbot.com --non-interactive --agree-tos --email lengocphan503@gmail.com
+certbot --nginx -d mon88.click -d www.mon88.click --non-interactive --agree-tos --email lengocphan503@gmail.com
 
 # Setup PM2
 print_status "Setting up PM2..."
