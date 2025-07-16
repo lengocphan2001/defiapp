@@ -12,8 +12,8 @@ BACKEND_DIR="$APP_DIR/backend"
 FRONTEND_DIR="$APP_DIR/frontend"
 DOMAIN="coincexbot.com"
 DB_NAME="defiapp"
-DB_USER="defiapp_user"
-DB_PASSWORD="your_secure_password_here"
+DB_USER="root"
+DB_PASSWORD="password"
 
 # Colors for output
 RED='\033[0;31m'
@@ -38,20 +38,6 @@ print_error() {
 print_status "Updating system packages..."
 apt update && apt upgrade -y
 
-# Install required packages
-print_status "Installing required packages..."
-apt install -y curl wget git nginx mysql-server mysql-client certbot python3-certbot-nginx nodejs npm
-
-# Install Node.js 18.x (if not already installed)
-if ! command -v node &> /dev/null || [[ $(node --version | cut -d'v' -f2 | cut -d'.' -f1) -lt 18 ]]; then
-    print_status "Installing Node.js 18.x..."
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-    apt install -y nodejs
-fi
-
-# Install PM2 globally
-print_status "Installing PM2..."
-npm install -g pm2
 
 # Create application directory
 print_status "Creating application directory..."
@@ -61,19 +47,13 @@ mkdir -p /var/log/pm2
 # Clone or update repository (replace with your actual repository URL)
 if [ ! -d "$APP_DIR/.git" ]; then
     print_status "Cloning repository..."
-    git clone https://github.com/yourusername/smart-mall-app.git $APP_DIR
+    git clone https://github.com/lengocphan2001/defiapp.git $APP_DIR
 else
     print_status "Updating repository..."
     cd $APP_DIR
     git pull origin main
 fi
 
-# Setup MySQL
-print_status "Setting up MySQL..."
-mysql -e "CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -e "CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';"
-mysql -e "GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'localhost';"
-mysql -e "FLUSH PRIVILEGES;"
 
 # Setup backend
 print_status "Setting up backend..."
@@ -153,7 +133,7 @@ nginx -t
 
 # Setup SSL certificate
 print_status "Setting up SSL certificate..."
-certbot --nginx -d coincexbot.com -d www.coincexbot.com --non-interactive --agree-tos --email admin@coincexbot.com
+certbot --nginx -d coincexbot.com -d www.coincexbot.com --non-interactive --agree-tos --email lengocphan503@gmail.com
 
 # Setup PM2
 print_status "Setting up PM2..."
