@@ -110,8 +110,8 @@ cat > config.env << EOF
 PORT=3001
 NODE_ENV=production
 DB_HOST=localhost
-DB_USER=defiapp_user
-DB_PASSWORD=your_secure_password
+DB_USER=root
+DB_PASSWORD=password
 DB_NAME=defiapp
 DB_PORT=3306
 JWT_SECRET=$(openssl rand -base64 64)
@@ -159,7 +159,7 @@ sudo cp -r build/* /var/www/smart-mall-app/build/
 sudo cp deployment/nginx.conf /etc/nginx/sites-available/smart-mall-app
 
 # Replace domain placeholder
-sudo sed -i "s/your-domain.com/your-actual-domain.com/g" /etc/nginx/sites-available/smart-mall-app
+sudo sed -i "s/coincexbot.com/www.coincexbot.com/g" /etc/nginx/sites-available/smart-mall-app
 
 # Enable site
 sudo ln -sf /etc/nginx/sites-available/smart-mall-app /etc/nginx/sites-enabled/
