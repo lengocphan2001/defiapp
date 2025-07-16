@@ -12,7 +12,10 @@ const WalletTab: React.FC = () => {
 
   const formatBalance = (balance: string) => {
     const numBalance = parseFloat(balance);
-    return numBalance.toFixed(2);
+    return numBalance.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
   };
 
   // Fetch user's requests
@@ -71,14 +74,14 @@ const WalletTab: React.FC = () => {
         {/* Direct Commission */}
         <div className="commission-card">
           <h3>Hoa hồng trực tiếp</h3>
-          <div className="commission-amount">0 SMP</div>
+          <div className="commission-amount">{formatBalance('0')} SMP</div>
           <button className="commission-btn">Rút trực tiếp</button>
         </div>
 
         {/* Tier Commission */}
         <div className="commission-card">
           <h3>Hoa hồng cấp bậc</h3>
-          <div className="commission-amount">0 SMP</div>
+          <div className="commission-amount">{formatBalance('0')} SMP</div>
           <button className="commission-btn">Rút cấp bậc</button>
         </div>
       </div>

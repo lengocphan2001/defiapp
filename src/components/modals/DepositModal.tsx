@@ -17,6 +17,14 @@ interface CryptoPrice {
   vnd: number;
 }
 
+// Utility function to truncate wallet address
+const truncateAddress = (address: string, startLength: number = 8, endLength: number = 6): string => {
+  if (address.length <= startLength + endLength + 3) {
+    return address;
+  }
+  return `${address.substring(0, startLength)}...${address.substring(address.length - endLength)}`;
+};
+
 const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onRequestCreated }) => {
   const [smpAmount, setSmpAmount] = useState('');
   const [copied, setCopied] = useState(false);
@@ -25,7 +33,7 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onRequestC
   const [priceLoading, setPriceLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const walletAddress = '0xYourBEP20';
+  const walletAddress = '0x169189F48dc3E4E3b59a41c19302BD2f9a50aE5d';
   
   // Calculate USDT amount based on SMP input
   const usdtAmount = smpAmount && parseFloat(smpAmount) > 0 
@@ -164,7 +172,7 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onRequestC
                 {/* Address Section */}
                 <div className="address-section">
                   <div className="address-display">
-                    <span className="address-text">{walletAddress}</span>
+                    <span className="address-text">{truncateAddress(walletAddress)}</span>
                     <button
                       onClick={handleCopyAddress}
                       className={`copy-button ${copied ? 'copied' : ''}`}

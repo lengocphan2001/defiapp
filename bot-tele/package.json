@@ -1,0 +1,26 @@
+{
+    "name": "defi-dapp-bot",
+    "version": "1.0.0",
+    "description": "Telegram bot for Smart Mall DApp",
+    "main": "bot.js",
+    "scripts": {
+        "start": "node bot.js",
+        "dev": "nodemon bot.js"
+    },
+    "dependencies": {
+        "axios": "^1.10.0",
+        "node-telegram-bot-api": "^0.64.0"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.2"
+    },
+    "keywords": [
+        "telegram",
+        "bot",
+        "smart-mall",
+        "dapp",
+        "crypto"
+    ],
+    "author": "Your Name",
+    "license": "MIT"
+}
