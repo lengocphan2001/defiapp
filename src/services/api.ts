@@ -3,7 +3,7 @@
 // Auto-detect production environment and use appropriate API URL
 const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 
-  (isProduction ? 'https://mon88.click/api' : 'http://localhost:3001/api');
+  (isProduction ? `${window.location.protocol}//${window.location.hostname}/api` : 'http://localhost:3001/api');
 
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
