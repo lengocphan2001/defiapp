@@ -9,6 +9,11 @@ interface RequestOptions {
 }
 
 class ApiService {
+  private getAuthHeaders(): Record<string, string> {
+    const token = localStorage.getItem('token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  }
+
   private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     const { method = 'GET', headers = {}, body } = options;
     
@@ -16,6 +21,7 @@ class ApiService {
       method,
       headers: {
         'Content-Type': 'application/json',
+        ...this.getAuthHeaders(),
         ...headers,
       },
     };
@@ -27,11 +33,20 @@ class ApiService {
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
       
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Handle different error types
+        if (response.status === 401) {
+          // Unauthorized - clear token and redirect to login
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
+        
+        throw new Error(data.message || `HTTP error! status: ${response.status}`);
       }
       
-      return await response.json();
+      return data;
     } catch (error) {
       console.error('API request failed:', error);
       throw error;

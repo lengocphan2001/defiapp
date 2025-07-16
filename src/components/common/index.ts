@@ -1,4 +1,5 @@
-export { default as Button } from './Button';
-export { default as Input } from './Input';
-export { default as FormInput } from './FormInput';
-export { default as PasswordInput } from './PasswordInput'; 
+export { default as Button } from './Button/Button';
+export { default as Input } from './Input/Input';
+export { default as FormInput } from './FormInput/FormInput';
+export { default as PasswordInput } from './PasswordInput/PasswordInput';
+export { default as WalletSettings } from '../WalletSettings/WalletSettings'; 

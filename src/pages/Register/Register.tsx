@@ -1,11 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Button, FormInput, PasswordInput } from '../../components/common';
-import { registerSchema, RegisterFormData } from '../../utils/schemas';
+import { typedRegisterSchema, RegisterFormData } from '../../utils/schemas';
 import { useApi } from '../../hooks/useApi';
 import { authService } from '../../services/auth';
+import { useAuth } from '../../context/AuthContext';
 import './Register.css';
 
 // Icon components
@@ -41,12 +42,14 @@ const GiftIcon = () => (
 );
 
 const Register: React.FC = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<RegisterFormData>({
-    resolver: yupResolver(registerSchema),
+    resolver: yupResolver(typedRegisterSchema),
     mode: 'onChange',
   });
 
@@ -54,9 +57,18 @@ const Register: React.FC = () => {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      await registerUser(data);
-      // Handle successful registration (redirect, show success message, etc.)
-      console.log('Registration successful');
+      const response = await registerUser(data);
+      
+      if (response.success) {
+        // Use auth context to login
+        login(response.data.token, response.data.user);
+        
+        // Show success message
+        console.log('Registration successful:', response.message);
+        
+        // Redirect to home page
+        navigate('/');
+      }
     } catch (error) {
       // Error is handled by useApi hook
       console.error('Registration failed:', error);
@@ -83,10 +95,9 @@ const Register: React.FC = () => {
           />
 
           <FormInput
-            label="Referral Code"
-            placeholder="Enter referral code"
+            label="Referral Code (Optional)"
+            placeholder="Enter referral code (optional)"
             type="text"
-            required
             icon={<GiftIcon />}
             error={errors.referral?.message}
             register={register('referral')}

@@ -8,7 +8,7 @@ interface UseApiState<T> {
 }
 
 interface UseApiReturn<T> extends UseApiState<T> {
-  execute: (...args: any[]) => Promise<void>;
+  execute: (...args: any[]) => Promise<T>;
   reset: () => void;
 }
 
@@ -26,7 +26,7 @@ export function useApi<T>(
   });
 
   const execute = useCallback(
-    async (...args: any[]) => {
+    async (...args: any[]): Promise<T> => {
       setState(prev => ({ ...prev, loading: true, error: null }));
       
       try {
@@ -36,12 +36,14 @@ export function useApi<T>(
           loading: false,
           error: null,
         });
+        return result;
       } catch (error) {
         setState({
           data: null,
           loading: false,
           error: error instanceof Error ? error.message : 'An error occurred',
         });
+        throw error;
       }
     },
     [apiCall]

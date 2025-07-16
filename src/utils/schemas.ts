@@ -25,8 +25,13 @@ export const registerSchema = yup.object({
     .matches(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
   referral: yup
     .string()
-    .required('Referral code is required')
-    .min(3, 'Referral code must be at least 3 characters'),
+    .transform((value) => (value === '' ? undefined : value))
+    .test('referral-validation', 'Referral code must be at least 3 characters', function(value) {
+      if (value === undefined || value === null || value === '') {
+        return true; // Optional field, no validation needed
+      }
+      return value.length >= 3;
+    }),
   phone: yup
     .string()
     .required('Phone number is required')
@@ -42,6 +47,20 @@ export const registerSchema = yup.object({
     .oneOf([yup.ref('password')], 'Passwords must match'),
 });
 
-// TypeScript types for the schemas
-export type LoginFormData = yup.InferType<typeof loginSchema>;
-export type RegisterFormData = yup.InferType<typeof registerSchema>; 
+// Explicit interfaces that match react-hook-form expectations
+export interface LoginFormData {
+  username: string;
+  password: string;
+}
+
+export interface RegisterFormData {
+  username: string;
+  referral?: string;
+  phone: string;
+  password: string;
+  repassword: string;
+}
+
+// Type assertion to ensure schema matches our interface
+export const typedLoginSchema = loginSchema as yup.ObjectSchema<LoginFormData>;
+export const typedRegisterSchema = registerSchema as yup.ObjectSchema<RegisterFormData>; 

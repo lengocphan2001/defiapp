@@ -1,0 +1,196 @@
+.bottom-nav-modern {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 400px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 20px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  z-index: 1000;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bottom-nav-modern:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.nav-modern-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  min-width: 60px;
+  height: 60px;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+.nav-modern-item:hover {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.2), rgba(6, 182, 212, 0.2));
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 
+    0 8px 25px rgba(20, 184, 166, 0.3),
+    0 0 0 1px rgba(20, 184, 166, 0.3);
+}
+
+.nav-modern-item.active {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.3), rgba(6, 182, 212, 0.3));
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 6px 20px rgba(20, 184, 166, 0.4),
+    0 0 0 1px rgba(20, 184, 166, 0.4);
+}
+
+.nav-modern-icon {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 6px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.nav-modern-item:hover .nav-modern-icon {
+  transform: scale(1.1);
+  filter: drop-shadow(0 4px 8px rgba(20, 184, 166, 0.4));
+}
+
+.nav-modern-item.active .nav-modern-icon {
+  transform: scale(1.05);
+  filter: drop-shadow(0 3px 6px rgba(20, 184, 166, 0.5));
+}
+
+.nav-modern-item span {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+}
+
+.nav-modern-item:hover span {
+  color: rgba(255, 255, 255, 1);
+  transform: scale(1.05);
+}
+
+.nav-modern-item.active span {
+  color: #14b8a6;
+  font-weight: 700;
+  transform: scale(1.02);
+}
+
+/* Active indicator */
+.nav-modern-item.active::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  background: linear-gradient(135deg, #14b8a6, #06b6d4);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(20, 184, 166, 0.6);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+/* Bump effect on click */
+.nav-modern-item:active {
+  transform: translateY(-1px) scale(0.98);
+  transition: all 0.1s ease;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0px);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-4px);
+  }
+}
+
+.bottom-nav-modern {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .bottom-nav-modern {
+    width: 95%;
+    height: 85px;
+    bottom: 15px;
+  }
+  
+  .nav-modern-item {
+    min-width: 65px;
+    height: 65px;
+    padding: 14px 18px;
+  }
+  
+  .nav-modern-icon {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .nav-modern-item span {
+    font-size: 12px;
+  }
+}
+
+@media (min-width: 768px) {
+  .bottom-nav-modern {
+    width: 85%;
+    max-width: 500px;
+    height: 90px;
+  }
+  
+  .nav-modern-item {
+    min-width: 70px;
+    height: 70px;
+    padding: 16px 20px;
+  }
+  
+  .nav-modern-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .nav-modern-item span {
+    font-size: 13px;
+  }
+} 

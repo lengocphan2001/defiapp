@@ -1,16 +1,23 @@
 // Common types used throughout the application
 
 export interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
+  id: number;
+  username: string;
+  phone: string;
+  referral_code: string;
+  referred_by: string | null;
+  balance: string;
+  address_wallet: string | null;
+  status: 'active' | 'inactive';
+  role: 'user' | 'admin';
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ApiResponse<T> {
-  data: T;
-  message: string;
   success: boolean;
+  message: string;
+  data: T;
 }
 
 export interface PaginatedResponse<T> {
@@ -21,24 +28,34 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-// Authentication types
-export interface LoginFormData {
-  username: string;
-  password: string;
-}
-
-export interface RegisterFormData {
-  username: string;
-  referral: string;
-  phone: string;
-  password: string;
-  repassword: string;
-}
+// Authentication types - imported from schemas to ensure consistency
+export type { LoginFormData, RegisterFormData } from '../utils/schemas';
 
 export interface AuthResponse {
-  user: User;
-  token: string;
+  success: boolean;
   message: string;
+  data: {
+    user: User;
+    token: string;
+  };
+}
+
+export interface LoginResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: User;
+    token: string;
+  };
+}
+
+export interface RegisterResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: User;
+    token: string;
+  };
 }
 
 // Component props types

@@ -1,11 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Button, FormInput, PasswordInput } from '../../components/common';
-import { loginSchema, LoginFormData } from '../../utils/schemas';
+import { typedLoginSchema, LoginFormData } from '../../utils/schemas';
 import { useApi } from '../../hooks/useApi';
 import { authService } from '../../services/auth';
+import { useAuth } from '../../context/AuthContext';
 import './Login.css';
 
 // Icon components
@@ -25,22 +26,33 @@ const LockIcon = () => (
 );
 
 const Login: React.FC = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginFormData>({
-    resolver: yupResolver(loginSchema),
+    resolver: yupResolver(typedLoginSchema),
     mode: 'onChange',
   });
 
-  const { execute: login, loading, error: apiError } = useApi(authService.login);
+  const { execute: loginApi, loading, error: apiError } = useApi(authService.login);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(data);
-      // Handle successful login (redirect, update context, etc.)
-      console.log('Login successful');
+      const response = await loginApi(data);
+      
+      if (response.success) {
+        // Use auth context to login
+        login(response.data.token, response.data.user);
+        
+        // Show success message
+        console.log('Login successful:', response.message);
+        
+        // Redirect to home page
+        navigate('/');
+      }
     } catch (error) {
       // Error is handled by useApi hook
       console.error('Login failed:', error);
