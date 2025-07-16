@@ -59,8 +59,8 @@ cat > config.env << EOF
 PORT=3001
 NODE_ENV=production
 DB_HOST=localhost
-DB_USER=defiapp_user
-DB_PASSWORD=your_secure_password
+DB_USER=root
+DB_PASSWORD=password
 DB_NAME=defiapp
 DB_PORT=3306
 JWT_SECRET=$(openssl rand -base64 64)
