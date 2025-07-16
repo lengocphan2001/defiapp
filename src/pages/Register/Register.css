@@ -1,0 +1,76 @@
+/* Register page specific styles - extends auth-page styles */
+.register-container {
+  max-width: 450px;
+  padding: 40px 32px;
+}
+
+.register-container .auth-form {
+  gap: 18px;
+}
+
+/* Password toggle improvements for register page */
+.register-container .password-toggle {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.register-container .password-toggle:hover {
+  color: #374151;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.register-container .password-toggle:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Mobile optimizations for register */
+@media (max-width: 480px) {
+  .register-container {
+    padding: 28px 20px;
+    max-width: 100%;
+  }
+  
+  .register-container .auth-form {
+    gap: 16px;
+  }
+  
+  .auth-title {
+    font-size: 1.6rem;
+  }
+  
+  .auth-subtitle {
+    font-size: 0.85rem;
+  }
+  
+  .register-container .password-toggle {
+    right: 12px;
+    padding: 6px;
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Additional spacing for register form */
+.register-container .auth-header {
+  margin-bottom: 28px;
+}
+
+.register-container .auth-footer {
+  margin-top: 28px;
+} 
