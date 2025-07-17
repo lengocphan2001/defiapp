@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
@@ -73,7 +73,26 @@ const PigIcon = ({ className }: { className?: string }) => (
 const Home: React.FC = () => {
   const { state } = useApp();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<BottomTab>('home');
+  
+  // Get saved tab from localStorage or default to 'home'
+  const getSavedTab = (): BottomTab => {
+    const saved = localStorage.getItem('activeTab');
+    return (saved as BottomTab) || 'home';
+  };
+
+  const [activeTab, setActiveTab] = useState<BottomTab>(getSavedTab);
+
+  // Save tab to localStorage whenever it changes
+  const handleTabChange = (tab: BottomTab) => {
+    setActiveTab(tab);
+    localStorage.setItem('activeTab', tab);
+  };
+
+  // Load saved tab on component mount
+  useEffect(() => {
+    const savedTab = getSavedTab();
+    setActiveTab(savedTab);
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -126,7 +145,7 @@ const Home: React.FC = () => {
       </main>
 
       {/* Modern Bottom Navigation */}
-      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
     </div>
   );
 };
