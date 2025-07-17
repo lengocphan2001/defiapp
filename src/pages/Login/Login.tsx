@@ -50,8 +50,12 @@ const Login: React.FC = () => {
         // Show success message
         console.log('Login successful:', response.message);
         
-        // Redirect to home page
-        navigate('/');
+        // Redirect based on user role
+        if (response.data.user.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
       }
     } catch (error) {
       // Error is handled by useApi hook
