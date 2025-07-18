@@ -1,3 +1,4 @@
+/* FormInput Styles - Updated to match PasswordInput */
 .form-input-container {
   display: flex;
   flex-direction: column;
@@ -25,15 +26,18 @@
 }
 
 .form-input-icon {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #6b7280;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: absolute !important;
+  left: 16px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: #6b7280 !important;
+  z-index: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  pointer-events: none !important;
 }
 
 .form-input {
@@ -51,14 +55,14 @@
 }
 
 .form-input--with-icon {
-  padding-left: 48px;
+  padding-left: 52px !important;
 }
 
 .form-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  background-color: #f8fafc;
+  outline: none !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  background-color: #f8fafc !important;
 }
 
 .form-input::placeholder {
@@ -71,8 +75,9 @@
 }
 
 .form-input--error:focus {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+  outline: none !important;
 }
 
 .form-input-error {
@@ -92,10 +97,12 @@
   }
   
   .form-input--with-icon {
-    padding-left: 44px;
+    padding-left: 48px !important;
   }
   
   .form-input-icon {
-    left: 14px;
+    left: 14px !important;
+    width: 18px !important;
+    height: 18px !important;
   }
 } 
