@@ -10,9 +10,9 @@
   transform: translateX(-50%);
   width: 90%;
   max-width: 400px;
-  height: 80px;
+  height: 60px;
   background: white;
-  border-radius: 40px;
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -27,16 +27,22 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 12px 16px;
-  border-radius: 18px;
+  padding: 8px 12px;
+  border-radius: 16px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  min-width: 60px;
-  height: 60px;
+  min-width: 50px;
+  height: 50px;
   background: none;
   border: none;
   outline: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 .nav-modern-item:hover {
@@ -48,9 +54,9 @@
 }
 
 .nav-modern-item svg {
-  width: 28px;
-  height: 28px;
-  margin-bottom: 6px;
+  width: 24px;
+  height: 24px;
+  margin-bottom: 4px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -63,7 +69,7 @@
 }
 
 .nav-modern-item span {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: #9CA3AF;
   text-align: center;
@@ -80,8 +86,8 @@
   font-weight: 700;
 }
 
-/* Active indicator */
-.nav-modern-item.active::before {
+/* Active indicator - removed */
+/* .nav-modern-item.active::before {
   content: '';
   position: absolute;
   bottom: -8px;
@@ -91,35 +97,44 @@
   height: 4px;
   background: #8B5CF6;
   border-radius: 50%;
-}
+} */
 
 /* Bump effect on click */
 .nav-modern-item:active {
   transform: translateY(-1px) scale(0.98);
   transition: all 0.1s ease;
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+.nav-modern-item:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
 }
 
 /* Responsive adjustments */
 @media (max-width: 480px) {
   .bottom-nav-modern {
     width: 95%;
-    height: 85px;
+    height: 65px;
     bottom: 15px;
   }
   
   .nav-modern-item {
-    min-width: 65px;
-    height: 65px;
-    padding: 14px 18px;
+    min-width: 55px;
+    height: 55px;
+    padding: 10px 14px;
   }
   
   .nav-modern-item svg {
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
   }
   
   .nav-modern-item span {
-    font-size: 12px;
+    font-size: 11px;
   }
 }
 
@@ -127,21 +142,21 @@
   .bottom-nav-modern {
     width: 85%;
     max-width: 500px;
-    height: 90px;
+    height: 70px;
   }
   
   .nav-modern-item {
-    min-width: 70px;
-    height: 70px;
-    padding: 16px 20px;
+    min-width: 60px;
+    height: 60px;
+    padding: 12px 16px;
   }
   
   .nav-modern-item svg {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
   }
   
   .nav-modern-item span {
-    font-size: 13px;
+    font-size: 12px;
   }
 } 

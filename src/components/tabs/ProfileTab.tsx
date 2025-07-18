@@ -62,7 +62,7 @@ const ProfileTab: React.FC = () => {
         </div>
         <div className="section-content">
           <div className="form-group">
-            <label className="form-label">Username:</label>
+            
             <div className="form-value">{user?.username}</div>
           </div>
           <div className="form-group">
@@ -105,6 +105,9 @@ const ProfileTab: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Logout Section */}
+      
 
       {/* Referral Section */}
       <div className="profile-section">
@@ -157,6 +160,10 @@ const ProfileTab: React.FC = () => {
           </div>
         </div>
       </div>
+      <button className="logout-button" onClick={logout}>
+        <span className="logout-icon">🚪</span>
+        Đăng xuất
+      </button>
     </div>
   );
 };

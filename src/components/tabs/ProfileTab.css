@@ -1,8 +1,9 @@
 .profile-tab {
   padding: 20px;
+  padding-bottom: 120px; /* Reduced bottom padding since nav is smaller */
   max-width: 100%;
   margin: 0 auto;
-  background: #1a1a2e;
+  /* background: #1a1a2e; */
   min-height: 100vh;
   color: white;
 }
@@ -50,7 +51,7 @@
   margin-bottom: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #e0e0e0;
+  color: #ffffff;
 }
 
 .form-input {
@@ -135,6 +136,38 @@
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid #ef4444;
   color: #ef4444;
+}
+
+/* Logout Button */
+.logout-button {
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.logout-button:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.logout-button:active {
+  transform: translateY(0);
+}
+
+.logout-icon {
+  font-size: 18px;
 }
 
 /* Info Items */
