@@ -62,6 +62,17 @@
   font-size: 14px;
 }
 
+.user-referral {
+  margin: 0 0 8px 0;
+  opacity: 0.9;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 8px;
+  display: inline-block;
+  backdrop-filter: blur(10px);
+}
+
 .user-level {
   display: inline-block;
 }

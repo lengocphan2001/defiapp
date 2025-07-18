@@ -50,10 +50,8 @@ const ProfileTab: React.FC = () => {
         </div>
         <div className="profile-info">
           <h2>{user?.username}</h2>
-          <p className="user-email">{user?.phone}</p>
-          <div className="user-level">
-            <span className="level-badge">VIP Member</span>
-          </div>
+          <p className="user-email">Số điện thoại: {user?.phone}</p>
+          <p className="user-referral">Mã giới thiệu: {user?.referral_code}</p>
         </div>
       </div>
     </div>

@@ -113,31 +113,33 @@ const Home: React.FC = () => {
 
   return (
     <div className={`smart-mall-app modern-bg ${state.theme}`}>
-      {/* Header */}
-      <header className="app-header">
-        <div className="header-content">
-          <div className="header-left">
-            {/* ... existing code ... */}
-          </div>
-          <div className="header-center">
-            <h1 className="app-title">Smart Mall</h1>
-            <div className="app-subtitle">
+      {/* Header - Only show on Home tab */}
+      {activeTab === 'home' && (
+        <header className="app-header">
+          <div className="header-content">
+            <div className="header-left">
               {/* ... existing code ... */}
             </div>
-            <p className="welcome-text">Chào mừng bạn đến với Smart Mall – Giao dịch thông minh!</p>
+            <div className="header-center">
+              <h1 className="app-title">Smart Mall</h1>
+              <div className="app-subtitle">
+                {/* ... existing code ... */}
+              </div>
+              <p className="welcome-text">Chào mừng bạn đến với Smart Mall – Giao dịch thông minh!</p>
+            </div>
+            <div className="header-right">
+              {user?.role === 'admin' && (
+                <Link to="/admin" className="admin-link">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  Admin Panel
+                </Link>
+              )}
+            </div>
           </div>
-          <div className="header-right">
-            {user?.role === 'admin' && (
-              <Link to="/admin" className="admin-link">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
-                Admin Panel
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Main Content */}
       <main className="app-main">
