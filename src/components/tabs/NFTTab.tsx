@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import nftService from '../../services/nftService';
 import sessionService from '../../services/sessionService';
 import { NFT } from '../../types';
+import { formatBalance, formatPrice } from '../../utils';
 import './NFTTab.css';
 
 interface NFTTransaction {
@@ -150,11 +151,6 @@ const NFTTab: React.FC = () => {
     } catch (err) {
       console.error('Error paying NFT:', err);
     }
-  };
-
-  const formatPrice = (price: string | number): string => {
-    const numPrice = typeof price === 'string' ? parseFloat(price) : price;
-    return numPrice.toLocaleString('vi-VN') + ' SMP';
   };
 
   const getNFTColor = (index: number): string => {

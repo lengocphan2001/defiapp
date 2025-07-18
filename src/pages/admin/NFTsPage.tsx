@@ -12,8 +12,10 @@ import {
   User,
   Calendar
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import nftService from '../../services/nftService';
-import { NFT } from '../../types';
+import { NFT, CreateNFTData } from '../../types';
+import { formatBalance, formatPrice } from '../../utils';
 import './NFTsPage.css';
 
 const NFTsPage: React.FC = () => {
@@ -251,7 +253,7 @@ const NFTsPage: React.FC = () => {
                 <td className="nft-name">{nft.name}</td>
                 <td className="nft-seller">{nft.owner_name}</td>
                 <td className="nft-price">
-                  {nftService.formatPrice(nft.price)} SMP
+                  {formatPrice(nft.price)} 
                 </td>
                 <td className="nft-type">{nftService.getTypeText(nft.type)}</td>
                 <td className="nft-status">
@@ -353,7 +355,7 @@ const NFTsPage: React.FC = () => {
                   </div>
                   <div className="detail-row">
                     <span className="label">Price:</span>
-                    <span className="value">{nftService.formatPrice(selectedNFT.price)} SMP</span>
+                    <span className="value">{formatPrice(selectedNFT.price)} SMP</span>
                   </div>
                   <div className="detail-row">
                     <span className="label">Status:</span>
@@ -417,7 +419,7 @@ const NFTsPage: React.FC = () => {
                   <div className="nft-summary">
                     <strong>{selectedNFT.name}</strong>
                     <span>ID: {selectedNFT.id}</span>
-                    <span>Price: {nftService.formatPrice(selectedNFT.price)} SMP</span>
+                    <span>Price: {formatPrice(selectedNFT.price)} SMP</span>
                   </div>
                   <p className="warning">This action cannot be undone.</p>
                 </div>

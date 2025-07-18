@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import requestService, { Request } from '../../services/requestService';
+import { formatBalance } from '../../utils';
 import DepositModal from '../modals/DepositModal';
 import './WalletTab.css';
 
@@ -9,14 +10,6 @@ const WalletTab: React.FC = () => {
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const formatBalance = (balance: string) => {
-    const numBalance = parseFloat(balance);
-    return numBalance.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-  };
 
   // Fetch user's requests
   const fetchRequests = async () => {
@@ -57,7 +50,7 @@ const WalletTab: React.FC = () => {
         <div className="balance-card">
           <h3>SMP chính</h3>
           <div className="balance-amount">
-            {formatBalance(user?.balance || '100000000000')} SMP
+            {formatBalance(user?.balance || '100000000000')}
           </div>
           <div className="balance-actions">
             <button className="balance-btn primary" onClick={handleDepositClick}>
@@ -74,14 +67,14 @@ const WalletTab: React.FC = () => {
         {/* Direct Commission */}
         <div className="commission-card">
           <h3>Hoa hồng trực tiếp</h3>
-          <div className="commission-amount">{formatBalance('0')} SMP</div>
+          <div className="commission-amount">{formatBalance('0')}</div>
           <button className="commission-btn">Rút trực tiếp</button>
         </div>
 
         {/* Tier Commission */}
         <div className="commission-card">
           <h3>Hoa hồng cấp bậc</h3>
-          <div className="commission-amount">{formatBalance('0')} SMP</div>
+          <div className="commission-amount">{formatBalance('0')}</div>
           <button className="commission-btn">Rút cấp bậc</button>
         </div>
       </div>
@@ -140,9 +133,9 @@ const WalletTab: React.FC = () => {
                         {typeInfo.text}
                       </span>
                     </span>
-                    <span className="request-smp">
-                      {smpAmount.toLocaleString('vi-VN')} SMP
-                    </span>
+                            <span className="request-smp">
+          {formatBalance(smpAmount)}
+        </span>
                     <span className="request-usdt">
                       {usdtAmount.toFixed(2)} USDT
                     </span>

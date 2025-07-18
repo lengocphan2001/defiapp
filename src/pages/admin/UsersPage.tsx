@@ -12,7 +12,9 @@ import {
   Download,
   UserPlus
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import userService from '../../services/userService';
+import { formatBalance } from '../../utils';
 import './UsersPage.css';
 
 interface User {
@@ -262,7 +264,7 @@ const UsersPage: React.FC = () => {
                 </div>
               </div>
               <div className="table-cell balance">
-                {parseFloat(user.balance).toLocaleString('vi-VN')} SMP
+                {formatBalance(user.balance)} 
               </div>
               <div className="table-cell wallet">
                 <div className="wallet-info">
@@ -362,7 +364,7 @@ const UsersPage: React.FC = () => {
                   <div className="detail-item">
                     <label>Current Balance</label>
                     <span className="balance-amount">
-                      {parseFloat(selectedUser.balance).toLocaleString('vi-VN')} SMP
+                      {formatBalance(selectedUser.balance)} SMP
                     </span>
                   </div>
                   <div className="detail-item full-width">

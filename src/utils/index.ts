@@ -49,4 +49,68 @@ export const isEmpty = (value: any): boolean => {
   if (Array.isArray(value)) return value.length === 0;
   if (typeof value === 'object') return Object.keys(value).length === 0;
   return false;
+};
+
+/**
+ * Format balance/price values for SMP currency
+ * @param value - The value to format (string, number, or undefined)
+ * @param options - Optional formatting options
+ * @returns Formatted string with Vietnamese locale and SMP suffix
+ */
+export const formatBalance = (
+  value: string | number | undefined | null,
+  options?: {
+    minimumFractionDigits?: number;
+    maximumFractionDigits?: number;
+    showSuffix?: boolean;
+  }
+): string => {
+  if (value === undefined || value === null || value === '') {
+    return '0 SMP';
+  }
+
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  
+  if (isNaN(numValue)) {
+    return '0 SMP';
+  }
+
+  const {
+    minimumFractionDigits = 0,
+    maximumFractionDigits = 8,
+    showSuffix = true
+  } = options || {};
+
+  const formatted = numValue.toLocaleString('vi-VN', {
+    minimumFractionDigits,
+    maximumFractionDigits
+  });
+
+  return showSuffix ? `${formatted} SMP` : formatted;
+};
+
+/**
+ * Format price values for SMP currency (with 2 decimal places)
+ * @param value - The value to format
+ * @returns Formatted string with Vietnamese locale and SMP suffix
+ */
+export const formatPrice = (value: string | number | undefined | null): string => {
+  return formatBalance(value, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 8,
+    showSuffix: true
+  });
+};
+
+/**
+ * Format registration fee values for SMP currency (with 0 decimal places)
+ * @param value - The value to format
+ * @returns Formatted string with Vietnamese locale and SMP suffix
+ */
+export const formatRegistrationFee = (value: string | number | undefined | null): string => {
+  return formatBalance(value, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+    showSuffix: true
+  });
 }; 

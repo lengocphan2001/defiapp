@@ -16,8 +16,10 @@ import {
   TrendingUp,
   AlertTriangle
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import requestService, { Request } from '../../services/requestService';
 import userService from '../../services/userService';
+import { formatBalance } from '../../utils';
 import './RequestsPage.css';
 
 const RequestsPage: React.FC = () => {
@@ -252,7 +254,7 @@ const RequestsPage: React.FC = () => {
             <DollarSign size={20} />
           </div>
           <div className="stat-content">
-            <h3>{stats.totalSMP.toLocaleString('vi-VN')}</h3>
+            <h3>{formatBalance(stats.totalSMP)}</h3>
             <p>Total SMP</p>
           </div>
         </div>
@@ -355,7 +357,7 @@ const RequestsPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="table-cell smp-amount">
-                  {parseFloat(request.smp_amount.toString()).toLocaleString('vi-VN')} SMP
+                  {formatBalance(request.smp_amount)} 
                 </div>
                 <div className="table-cell usdt-amount">
                   {parseFloat(request.usdt_amount.toString()).toFixed(2)} USDT
@@ -482,7 +484,7 @@ const RequestsPage: React.FC = () => {
                   <div className="detail-item">
                     <label>SMP Amount</label>
                     <span className="amount-smp">
-                      {parseFloat(selectedRequest.smp_amount.toString()).toLocaleString('vi-VN')} SMP
+                      {formatBalance(selectedRequest.smp_amount)} SMP
                     </span>
                   </div>
                   <div className="detail-item">

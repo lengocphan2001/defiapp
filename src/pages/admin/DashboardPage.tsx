@@ -13,9 +13,11 @@ import {
   Image,
   ShoppingCart
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import requestService, { Request } from '../../services/requestService';
 import userService from '../../services/userService';
 import nftService from '../../services/nftService';
+import { formatBalance } from '../../utils';
 import './DashboardPage.css';
 
 interface User {
@@ -201,7 +203,7 @@ const DashboardPage: React.FC = () => {
             <DollarSign size={24} />
           </div>
           <div className="stat-content">
-            <h3>{stats.totalSMP.toLocaleString('vi-VN')}</h3>
+            <h3>{formatBalance(stats.totalSMP)}</h3>
             <p>Total SMP</p>
             <div className="stat-trend positive">
               <TrendingUp size={14} />
@@ -249,7 +251,7 @@ const DashboardPage: React.FC = () => {
             <DollarSign size={20} />
           </div>
           <div className="stat-content">
-            <h3>{stats.averageRequestValue.toLocaleString('vi-VN')}</h3>
+            <h3>{formatBalance(stats.averageRequestValue)}</h3>
             <p>Avg. Request Value</p>
           </div>
         </div>
@@ -269,7 +271,7 @@ const DashboardPage: React.FC = () => {
             <DollarSign size={20} />
           </div>
           <div className="stat-content">
-            <h3>{stats.todaySMP.toLocaleString('vi-VN')}</h3>
+            <h3>{formatBalance(stats.todaySMP)}</h3>
             <p>Today's SMP</p>
           </div>
         </div>
@@ -289,7 +291,7 @@ const DashboardPage: React.FC = () => {
             <DollarSign size={20} />
           </div>
           <div className="stat-content">
-            <h3>{stats.totalNFTValue.toLocaleString('vi-VN')}</h3>
+            <h3>{formatBalance(stats.totalNFTValue)}</h3>
             <p>Total NFT Value</p>
           </div>
         </div>
@@ -318,7 +320,7 @@ const DashboardPage: React.FC = () => {
                       Request #{request.id} - {typeInfo.text}
                     </span>
                     <span className="activity-amount">
-                      {parseFloat(request.smp_amount.toString()).toLocaleString('vi-VN')} SMP
+                      {formatBalance(parseFloat(request.smp_amount.toString()))} SMP
                     </span>
                   </div>
                   <div className="activity-details">

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import userService from '../../services/userService';
+import { formatBalance } from '../../utils';
 import './ProfileTab.css';
 
 const ProfileTab: React.FC = () => {
@@ -66,7 +67,7 @@ const ProfileTab: React.FC = () => {
             <div className="form-value">{user?.username}</div>
           </div>
           <div className="form-group">
-            <label className="form-label">Số điện thoại:</label>
+            <label className="form-label" style={{color: '#fff', textAlign: 'left'}}>Số điện thoại:</label>
             <input
               type="text"
               className="form-input"
@@ -76,7 +77,7 @@ const ProfileTab: React.FC = () => {
             />
           </div>
           <div className="form-group">
-            <label className="form-label">Họ tên đầy đủ:</label>
+            <label className="form-label" style={{color: '#fff', textAlign: 'left'}}>Họ tên đầy đủ:</label>
             <input
               type="text"
               className="form-input"
@@ -86,7 +87,7 @@ const ProfileTab: React.FC = () => {
             />
           </div>
           <div className="form-group">
-            <label className="form-label">Ví BEP20:</label>
+            <label className="form-label" style={{color: '#fff', textAlign: 'left'}}>Ví BEP20:</label>
             <input
               type="text"
               className="form-input"
@@ -126,7 +127,7 @@ const ProfileTab: React.FC = () => {
           </div>
           <div className="info-item">
             <span className="info-label">Doanh số nhóm:</span>
-            <span className="info-value">0 SMP</span>
+            <span className="info-value">{formatBalance('0')}</span>
           </div>
           <div className="info-item">
             <span className="info-label">Mã giới thiệu:</span>
@@ -157,6 +158,10 @@ const ProfileTab: React.FC = () => {
           <div className="info-item">
             <span className="info-label">Hoa hồng đội:</span>
             <span className="info-value">0%</span>
+          </div>
+          <div className="info-row">
+            <span className="info-label">Số dư:</span>
+            <span className="info-value">{formatBalance('0')}</span>
           </div>
         </div>
       </div>

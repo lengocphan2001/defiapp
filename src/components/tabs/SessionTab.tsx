@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import sessionService from '../../services/sessionService';
 import { NFT } from '../../types';
+import { formatBalance, formatPrice, formatRegistrationFee } from '../../utils';
 import './SessionTab.css';
 
 const SessionTab: React.FC = () => {
@@ -29,6 +30,9 @@ const SessionTab: React.FC = () => {
       const sessionResponse = await sessionService.getTodaySession();
       if (sessionResponse.success) {
         setSessionInfo(sessionResponse.data);
+      } else {
+        setError('Không thể tải thông tin phiên giao dịch');
+        return;
       }
       
       // Check if user is registered
@@ -41,10 +45,33 @@ const SessionTab: React.FC = () => {
         if (registrationResponse.data.is_registered) {
           await fetchAvailableNFTs();
         }
+      } else {
+        setError('Không thể kiểm tra trạng thái đăng ký');
       }
     } catch (err) {
-      setError('Có lỗi xảy ra khi tải dữ liệu phiên');
-      console.error('Error fetching session data:', err);
+      
+      // Handle specific error types
+      let errorMessage = 'Có lỗi xảy ra khi tải dữ liệu phiên';
+      
+      if (err instanceof Error) {
+        const errorText = err.message.toLowerCase();
+        
+        if (errorText.includes('401') || errorText.includes('unauthorized')) {
+          errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+        } else if (errorText.includes('403') || errorText.includes('forbidden')) {
+          errorMessage = 'Bạn không có quyền truy cập.';
+        } else if (errorText.includes('404') || errorText.includes('not found')) {
+          errorMessage = 'Không tìm thấy phiên giao dịch.';
+        } else if (errorText.includes('500') || errorText.includes('server error')) {
+          errorMessage = 'Lỗi máy chủ. Vui lòng thử lại sau.';
+        } else if (errorText.includes('network') || errorText.includes('fetch')) {
+          errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.';
+        } else {
+          errorMessage = err.message || 'Có lỗi xảy ra khi tải dữ liệu phiên';
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -57,11 +84,35 @@ const SessionTab: React.FC = () => {
       if (response.success) {
         setNfts(response.data);
       } else {
-        setError('Không thể tải danh sách NFT');
       }
     } catch (err) {
-      setError('Có lỗi xảy ra khi tải dữ liệu NFT');
-      console.error('Error fetching NFTs:', err);
+      
+      // Handle specific error types
+      let errorMessage = 'Có lỗi xảy ra khi tải dữ liệu NFT';
+      
+      if (err instanceof Error) {
+        const errorText = err.message.toLowerCase();
+        
+        if (errorText.includes('not registered') || errorText.includes('chưa đăng ký')) {
+          errorMessage = 'Bạn cần đăng ký phiên trước khi xem NFT.';
+        } else if (errorText.includes('session closed') || errorText.includes('phiên đã đóng')) {
+          errorMessage = 'Phiên giao dịch đã đóng.';
+        } else if (errorText.includes('401') || errorText.includes('unauthorized')) {
+          errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+        } else if (errorText.includes('403') || errorText.includes('forbidden')) {
+          errorMessage = 'Bạn không có quyền xem NFT.';
+        } else if (errorText.includes('404') || errorText.includes('not found')) {
+          errorMessage = 'Không tìm thấy NFT.';
+        } else if (errorText.includes('500') || errorText.includes('server error')) {
+          errorMessage = 'Lỗi máy chủ. Vui lòng thử lại sau.';
+        } else if (errorText.includes('network') || errorText.includes('fetch')) {
+          errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.';
+        } else {
+          errorMessage = err.message || 'Có lỗi xảy ra khi tải dữ liệu NFT';
+        }
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -82,10 +133,37 @@ const SessionTab: React.FC = () => {
         setRegistrationMessage({ type: 'error', text: response.message || 'Có lỗi xảy ra' });
       }
     } catch (err) {
-      setRegistrationMessage({ 
-        type: 'error', 
-        text: err instanceof Error ? err.message : 'Có lỗi xảy ra khi đăng ký phiên' 
-      });
+      
+      // Handle specific error types
+      let errorMessage = 'Có lỗi xảy ra khi đăng ký phiên';
+      
+      if (err instanceof Error) {
+        const errorText = err.message.toLowerCase();
+        
+        if (errorText.includes('insufficient balance') || errorText.includes('không đủ số dư')) {
+          errorMessage = 'Số dư không đủ để đăng ký phiên. Vui lòng nạp thêm tiền.';
+        } else if (errorText.includes('already registered') || errorText.includes('đã đăng ký')) {
+          errorMessage = 'Bạn đã đăng ký phiên này rồi.';
+        } else if (errorText.includes('session closed') || errorText.includes('phiên đã đóng')) {
+          errorMessage = 'Phiên giao dịch đã đóng. Vui lòng chờ phiên tiếp theo.';
+        } else if (errorText.includes('registration fee') || errorText.includes('phí đăng ký')) {
+          errorMessage = 'Phí đăng ký không hợp lệ. Vui lòng thử lại.';
+        } else if (errorText.includes('401') || errorText.includes('unauthorized')) {
+          errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+        } else if (errorText.includes('403') || errorText.includes('forbidden')) {
+          errorMessage = 'Bạn không có quyền đăng ký phiên.';
+        } else if (errorText.includes('404') || errorText.includes('not found')) {
+          errorMessage = 'Không tìm thấy phiên giao dịch.';
+        } else if (errorText.includes('500') || errorText.includes('server error')) {
+          errorMessage = 'Lỗi máy chủ. Vui lòng thử lại sau.';
+        } else if (errorText.includes('network') || errorText.includes('fetch')) {
+          errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.';
+        } else {
+          errorMessage = err.message || 'Có lỗi xảy ra khi đăng ký phiên';
+        }
+      }
+      
+      setRegistrationMessage({ type: 'error', text: errorMessage });
     } finally {
       setRegistrationLoading(false);
     }
@@ -105,14 +183,39 @@ const SessionTab: React.FC = () => {
         alert(response.message || 'Có lỗi xảy ra khi mua NFT');
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Có lỗi xảy ra khi mua NFT');
-      console.error('Error buying NFT:', err);
+      // Handle specific error types
+      let errorMessage = 'Có lỗi xảy ra khi mua NFT';
+      
+      if (err instanceof Error) {
+        const errorText = err.message.toLowerCase();
+        
+        if (errorText.includes('insufficient balance') || errorText.includes('không đủ số dư')) {
+          errorMessage = 'Số dư không đủ để mua NFT này. Vui lòng nạp thêm tiền.';
+        } else if (errorText.includes('nft not found') || errorText.includes('không tìm thấy nft')) {
+          errorMessage = 'NFT không tồn tại hoặc đã được bán.';
+        } else if (errorText.includes('already owned') || errorText.includes('đã sở hữu')) {
+          errorMessage = 'Bạn đã sở hữu NFT này rồi.';
+        } else if (errorText.includes('not registered') || errorText.includes('chưa đăng ký')) {
+          errorMessage = 'Bạn cần đăng ký phiên trước khi mua NFT.';
+        } else if (errorText.includes('session closed') || errorText.includes('phiên đã đóng')) {
+          errorMessage = 'Phiên giao dịch đã đóng. Không thể mua NFT.';
+        } else if (errorText.includes('401') || errorText.includes('unauthorized')) {
+          errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+        } else if (errorText.includes('403') || errorText.includes('forbidden')) {
+          errorMessage = 'Bạn không có quyền mua NFT này.';
+        } else if (errorText.includes('404') || errorText.includes('not found')) {
+          errorMessage = 'NFT không tìm thấy.';
+        } else if (errorText.includes('500') || errorText.includes('server error')) {
+          errorMessage = 'Lỗi máy chủ. Vui lòng thử lại sau.';
+        } else if (errorText.includes('network') || errorText.includes('fetch')) {
+          errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.';
+        } else {
+          errorMessage = err.message || 'Có lỗi xảy ra khi mua NFT';
+        }
+      }
+      
+      alert(errorMessage);
     }
-  };
-
-  const formatPrice = (price: string | number): string => {
-    const numPrice = typeof price === 'string' ? parseFloat(price) : price;
-    return numPrice.toLocaleString('vi-VN') + ' SMP';
   };
 
   const getNFTColor = (index: number): string => {
@@ -246,8 +349,8 @@ const SessionTab: React.FC = () => {
         {/* Registration Info */}
         {!isRegistered && sessionInfo && sessionInfo.status === 'active' && (
           <div className="registration-info">
-            <p style={{color: '#fff'}}>Phí đăng ký: {sessionService.formatRegistrationFee(sessionInfo.registration_fee)}</p>
-            <p style={{color: '#fff'}}>Số dư hiện tại: {user?.balance ? formatPrice(user.balance) : '0 SMP'}</p>
+            <p style={{color: '#fff'}}>Phí đăng ký: {formatRegistrationFee(sessionInfo.registration_fee)}</p>
+            <p style={{color: '#fff'}}>Số dư hiện tại: {formatBalance(user?.balance)}</p>
           </div>
         )}
 
@@ -255,7 +358,7 @@ const SessionTab: React.FC = () => {
         {isRegistered && registrationInfo && (
           <div className="registration-details">
             <p style={{color: '#fff'}}>Đã đăng ký lúc: {formatRegistrationTime(registrationInfo.registered_at)}</p>
-            <p style={{color: '#fff'}}>Phí đã trả: {sessionService.formatRegistrationFee(registrationInfo.registration_fee)}</p>
+            <p style={{color: '#fff'}}>Phí đã trả: {formatRegistrationFee(registrationInfo.registration_fee)}</p>
           </div>
         )}
 
@@ -326,7 +429,7 @@ const SessionTab: React.FC = () => {
           <div className="registration-card">
             <h3>Đăng ký tham gia phiên</h3>
             <p>Bạn cần đăng ký phiên để xem và mua NFT khả dụng</p>
-            <p>Phí đăng ký: {sessionInfo ? sessionService.formatRegistrationFee(sessionInfo.registration_fee) : '20,000 SMP'}</p>
+            <p>Phí đăng ký: {sessionInfo ? formatRegistrationFee(sessionInfo.registration_fee) : '20,000 SMP'}</p>
           </div>
         </div>
       ) : sessionInfo?.status === 'closed' ? (
