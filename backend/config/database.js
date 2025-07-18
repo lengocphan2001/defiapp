@@ -40,6 +40,7 @@ const initDatabase = async () => {
         username VARCHAR(50) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         phone VARCHAR(20) NOT NULL,
+        fullname VARCHAR(100) NULL,
         referral_code VARCHAR(50) UNIQUE,
         referred_by VARCHAR(50),
         balance DECIMAL(18,2) DEFAULT 0.00,

@@ -87,7 +87,7 @@ const register = async (req, res) => {
 
     // Get the created user (without password)
     const [newUser] = await pool.execute(
-      'SELECT id, username, phone, referral_code, referred_by, balance, address_wallet, status, role, created_at FROM users WHERE id = ?',
+      'SELECT id, username, phone, fullname, referral_code, referred_by, balance, address_wallet, status, role, created_at FROM users WHERE id = ?',
       [result.insertId]
     );
 
@@ -123,7 +123,7 @@ const login = async (req, res) => {
 
     // Find user by username
     const [users] = await pool.execute(
-      'SELECT id, username, password, phone, referral_code, referred_by, balance, address_wallet, status, role, created_at FROM users WHERE username = ?',
+      'SELECT id, username, password, phone, fullname, referral_code, referred_by, balance, address_wallet, status, role, created_at FROM users WHERE username = ?',
       [username]
     );
 
@@ -222,7 +222,7 @@ const updateWalletAddress = async (req, res) => {
 
     // Get updated user data
     const [users] = await pool.execute(
-      'SELECT id, username, phone, referral_code, referred_by, balance, address_wallet, status, role, created_at, updated_at FROM users WHERE id = ?',
+      'SELECT id, username, phone, fullname, referral_code, referred_by, balance, address_wallet, status, role, created_at, updated_at FROM users WHERE id = ?',
       [userId]
     );
 

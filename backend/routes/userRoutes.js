@@ -21,4 +21,7 @@ router.patch('/:id/balance', userController.updateUserBalance);
 // Update user status (admin only)
 router.patch('/:id/status', userController.updateUserStatus);
 
+// Update user profile (user can update their own profile)
+router.put('/profile', userController.updateUserProfile);
+
 module.exports = router; 

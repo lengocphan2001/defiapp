@@ -1,57 +1,160 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
+import userService from '../../services/userService';
 import './ProfileTab.css';
 
 const ProfileTab: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { state, dispatch } = useApp();
-  const [activeSection, setActiveSection] = useState('profile');
+  const [formData, setFormData] = useState({
+    phone: user?.phone || '',
+    fullName: user?.fullname || '',
+    walletAddress: user?.address_wallet || ''
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const formatBalance = (balance: string) => {
-    const numBalance = parseFloat(balance);
-    return numBalance.toFixed(2);
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const profileStats = [
-    { label: 'Tổng giao dịch', value: '156', icon: '📊' },
-    { label: 'NFT sở hữu', value: '23', icon: '🎨' },
-    { label: 'Ngày tham gia', value: '45', icon: '📅' },
-    { label: 'Điểm uy tín', value: '850', icon: '⭐' }
-  ];
+  const handleSave = async () => {
+    if (!formData.phone.trim()) {
+      setMessage({ type: 'error', text: 'Số điện thoại là bắt buộc' });
+      return;
+    }
 
-  const menuItems = [
-    { id: 'profile', label: 'Thông tin cá nhân', icon: '👤' },
-    { id: 'security', label: 'Bảo mật', icon: '🔒' },
-    { id: 'notifications', label: 'Thông báo', icon: '🔔' },
-    { id: 'preferences', label: 'Tùy chọn', icon: '⚙️' },
-    { id: 'help', label: 'Trợ giúp', icon: '❓' },
-    { id: 'about', label: 'Về ứng dụng', icon: 'ℹ️' }
-  ];
+    setIsLoading(true);
+    setMessage(null);
 
-  const handleThemeToggle = () => {
-    const newTheme = state.theme === 'light' ? 'dark' : 'light';
-    dispatch({ type: 'SET_THEME', payload: newTheme });
-  };
+    try {
+      const response = await userService.updateUserProfile({
+        phone: formData.phone.trim(),
+        fullname: formData.fullName.trim() || undefined,
+        address_wallet: formData.walletAddress.trim() || undefined
+      });
 
-  const handleLogout = () => {
-    logout();
+      if (response.success) {
+        setMessage({ type: 'success', text: 'Cập nhật thông tin thành công!' });
+        // Update the user context with new data
+        updateUser(response.data.user);
+      } else {
+        setMessage({ type: 'error', text: response.message || 'Có lỗi xảy ra' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Có lỗi xảy ra' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="profile-tab">
-      {/* Header */}
-      <div className="profile-header">
-        <div className="profile-avatar">
-          <div className="avatar-circle">
-            <span>{user?.username?.charAt(0).toUpperCase()}</span>
-          </div>
-          <div className="online-status"></div>
+      {/* Personal Information Section */}
+      <div className="profile-section">
+        <div className="section-header">
+          <span className="section-icon">👤</span>
+          <h3 className="section-title">Thông tin cá nhân</h3>
         </div>
-        <div className="profile-info">
-          <h2>{user?.username}</h2>
-          <p className="user-email">Số điện thoại: {user?.phone}</p>
-          <p className="user-referral">Mã giới thiệu: {user?.referral_code}</p>
+        <div className="section-content">
+          <div className="form-group">
+            <label className="form-label">Username:</label>
+            <div className="form-value">{user?.username}</div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Số điện thoại:</label>
+            <input
+              type="text"
+              className="form-input"
+              value={formData.phone}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+              placeholder="Nhập số điện thoại"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Họ tên đầy đủ:</label>
+            <input
+              type="text"
+              className="form-input"
+              value={formData.fullName}
+              onChange={(e) => handleInputChange('fullName', e.target.value)}
+              placeholder="Nhập họ tên đầy đủ"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Ví BEP20:</label>
+            <input
+              type="text"
+              className="form-input"
+              value={formData.walletAddress}
+              onChange={(e) => handleInputChange('walletAddress', e.target.value)}
+              placeholder="Nhập địa chỉ ví BEP20"
+            />
+          </div>
+          {message && (
+            <div className={`message ${message.type}`}>
+              {message.text}
+            </div>
+          )}
+          <button className="save-button" onClick={handleSave} disabled={isLoading}>
+            {isLoading ? 'Đang lưu...' : 'Lưu'}
+          </button>
+        </div>
+      </div>
+
+      {/* Referral Section */}
+      <div className="profile-section">
+        <div className="section-header">
+          <span className="section-icon">🔗</span>
+          <h3 className="section-title">Referral</h3>
+        </div>
+        <div className="section-content">
+          <div className="info-item">
+            <span className="info-label">Trực tiếp:</span>
+            <span className="info-value">0</span>
+          </div>
+          <div className="info-item">
+            <span className="info-label">Đội nhóm:</span>
+            <span className="info-value">0</span>
+          </div>
+          <div className="info-item">
+            <span className="info-label">Doanh số nhóm:</span>
+            <span className="info-value">0 SMP</span>
+          </div>
+          <div className="info-item">
+            <span className="info-label">Mã giới thiệu:</span>
+            <span className="info-value referral-code">{user?.referral_code}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Rank/Level Section */}
+      <div className="profile-section">
+        <div className="section-header">
+          <span className="section-icon">❗</span>
+          <h3 className="section-title">Cấp bậc</h3>
+        </div>
+        <div className="section-content">
+          <div className="info-item">
+            <span className="info-label">VIP:</span>
+            <span className="info-value">VIP0 (1 ngày)</span>
+          </div>
+          <div className="info-item">
+            <span className="info-label">Lợi nhuận:</span>
+            <span className="info-value">1.5%</span>
+          </div>
+          <div className="info-item">
+            <span className="info-label">S-Level:</span>
+            <span className="info-value">S0</span>
+          </div>
+          <div className="info-item">
+            <span className="info-label">Hoa hồng đội:</span>
+            <span className="info-value">0%</span>
+          </div>
         </div>
       </div>
     </div>

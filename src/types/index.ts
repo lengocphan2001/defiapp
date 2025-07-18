@@ -4,6 +4,7 @@ export interface User {
   id: number;
   username: string;
   phone: string;
+  fullname: string | null;
   referral_code: string;
   referred_by: string | null;
   balance: string;

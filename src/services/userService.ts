@@ -61,6 +61,20 @@ class UserService {
     }
   }
 
+  // Update user profile
+  async updateUserProfile(profileData: {
+    phone: string;
+    fullname?: string;
+    address_wallet?: string;
+  }): Promise<{ success: boolean; message: string; data: { user: any } }> {
+    try {
+      const response = await apiService.put<{ success: boolean; message: string; data: { user: any } }>('/users/profile', profileData);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   // Helper method to handle errors
   private handleError(error: any): Error {
     if (error.response?.data?.message) {

@@ -49,7 +49,7 @@ const userController = {
         });
       }
 
-      const query = 'SELECT id, username, phone, balance, address_wallet, created_at, updated_at FROM users WHERE id = ?';
+      const query = 'SELECT id, username, phone, fullname, balance, address_wallet, created_at, updated_at FROM users WHERE id = ?';
       const [rows] = await pool.execute(query, [id]);
 
       if (rows.length === 0) {
@@ -66,6 +66,78 @@ const userController = {
 
     } catch (error) {
       console.error('Error fetching user:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error.message
+      });
+    }
+  },
+
+  // Update user profile
+  async updateUserProfile(req, res) {
+    try {
+      const userId = req.user.id;
+      const { phone, fullname, address_wallet } = req.body;
+
+      // Validate input
+      if (!phone || phone.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Phone number is required'
+        });
+      }
+
+      // Check if phone number is already taken by another user
+      const [existingPhone] = await pool.execute(
+        'SELECT id FROM users WHERE phone = ? AND id != ?',
+        [phone.trim(), userId]
+      );
+
+      if (existingPhone.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Phone number is already registered by another user'
+        });
+      }
+
+      // Update user profile
+      const updateQuery = `
+        UPDATE users 
+        SET phone = ?, fullname = ?, address_wallet = ?, updated_at = NOW() 
+        WHERE id = ?
+      `;
+      
+      const [result] = await pool.execute(updateQuery, [
+        phone.trim(),
+        fullname ? fullname.trim() : null,
+        address_wallet ? address_wallet.trim() : null,
+        userId
+      ]);
+
+      if (result.affectedRows === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Failed to update profile'
+        });
+      }
+
+      // Get updated user data
+      const [updatedUser] = await pool.execute(
+        'SELECT id, username, phone, fullname, referral_code, referred_by, balance, address_wallet, status, role, created_at, updated_at FROM users WHERE id = ?',
+        [userId]
+      );
+
+      res.json({
+        success: true,
+        message: 'Profile updated successfully',
+        data: {
+          user: updatedUser[0]
+        }
+      });
+
+    } catch (error) {
+      console.error('Error updating user profile:', error);
       res.status(500).json({
         success: false,
         message: 'Internal server error',
