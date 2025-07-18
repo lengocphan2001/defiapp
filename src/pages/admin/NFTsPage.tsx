@@ -58,7 +58,7 @@ const NFTsPage: React.FC = () => {
   const filteredNFTs = nfts.filter(nft => {
     const matchesSearch = nft.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          nft.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         nft.seller_name.toLowerCase().includes(searchTerm.toLowerCase());
+                         nft.owner_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || nft.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -124,7 +124,8 @@ const NFTsPage: React.FC = () => {
       if (modalType === 'create') {
         await nftService.createNFT({
           name: formData.name.trim(),
-          price
+          price,
+          type: 'sell' // Ensure type is 'sell' for new NFTs
         });
         setFormMessage({ type: 'success', text: 'Tạo NFT thành công!' });
       } else if (modalType === 'edit' && selectedNFT) {
@@ -235,8 +236,9 @@ const NFTsPage: React.FC = () => {
             <tr>
               <th>ID</th>
               <th>Name</th>
-              <th>Seller</th>
+              <th>Owner</th>
               <th>Price</th>
+              <th>Type</th>
               <th>Status</th>
               <th>Created</th>
               <th>Actions</th>
@@ -247,10 +249,11 @@ const NFTsPage: React.FC = () => {
               <tr key={nft.id}>
                 <td className="nft-id">{nft.id}</td>
                 <td className="nft-name">{nft.name}</td>
-                <td className="nft-seller">{nft.seller_name}</td>
+                <td className="nft-seller">{nft.owner_name}</td>
                 <td className="nft-price">
                   {nftService.formatPrice(nft.price)} SMP
                 </td>
+                <td className="nft-type">{nftService.getTypeText(nft.type)}</td>
                 <td className="nft-status">
                   {getStatusBadge(nft.status)}
                 </td>
@@ -346,7 +349,7 @@ const NFTsPage: React.FC = () => {
                   </div>
                   <div className="detail-row">
                     <span className="label">Seller:</span>
-                    <span className="value">{selectedNFT.seller_name}</span>
+                    <span className="value">{selectedNFT.owner_name}</span>
                   </div>
                   <div className="detail-row">
                     <span className="label">Price:</span>
@@ -355,6 +358,10 @@ const NFTsPage: React.FC = () => {
                   <div className="detail-row">
                     <span className="label">Status:</span>
                     <span className="value">{getStatusBadge(selectedNFT.status)}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="label">Type:</span>
+                    <span className="value">{selectedNFT.type}</span>
                   </div>
                   <div className="detail-row">
                     <span className="label">Created:</span>

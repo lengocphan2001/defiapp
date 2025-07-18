@@ -4,8 +4,8 @@ const nftController = {
   // Create new NFT
   async createNFT(req, res) {
     try {
-      const { name, price } = req.body;
-      const seller_id = req.user.id;
+      const { name, price, type = 'sell' } = req.body;
+      const owner_id = req.user.id;
 
       // Validate input
       if (!name || name.trim().length === 0) {
@@ -22,10 +22,19 @@ const nftController = {
         });
       }
 
+      // Validate type
+      if (type && !['sell', 'buy'].includes(type)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Type must be either "sell" or "buy"'
+        });
+      }
+
       const nftData = {
         name: name.trim(),
-        seller_id,
-        price: parseFloat(price)
+        owner_id,
+        price: parseFloat(price),
+        type
       };
 
       const newNFT = await NFT.create(nftData);
@@ -127,7 +136,7 @@ const nftController = {
   async getUserNFTs(req, res) {
     try {
       const userId = req.user.id;
-      const nfts = await NFT.findBySellerId(userId);
+      const nfts = await NFT.findByOwnerId(userId);
 
       res.json({
         success: true,
@@ -168,7 +177,7 @@ const nftController = {
         });
       }
 
-      if (nft.seller_id !== userId && req.user.role !== 'admin') {
+      if (nft.owner_id !== userId && req.user.role !== 'admin') {
         return res.status(403).json({
           success: false,
           message: 'You can only update your own NFTs'
@@ -224,7 +233,7 @@ const nftController = {
         });
       }
 
-      if (nft.seller_id !== userId && req.user.role !== 'admin') {
+      if (nft.owner_id !== userId && req.user.role !== 'admin') {
         return res.status(403).json({
           success: false,
           message: 'You can only update your own NFTs'
@@ -270,7 +279,7 @@ const nftController = {
         });
       }
 
-      if (nft.seller_id !== userId && req.user.role !== 'admin') {
+      if (nft.owner_id !== userId && req.user.role !== 'admin') {
         return res.status(403).json({
           success: false,
           message: 'You can only delete your own NFTs'

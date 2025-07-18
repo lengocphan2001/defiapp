@@ -2,58 +2,84 @@
   padding: 20px;
   max-width: 100%;
   margin: 0 auto;
+  padding-bottom: 100px; /* Account for bottom navigation */
 }
 
-/* Header Stats */
+/* Header */
 .session-header {
   margin-bottom: 24px;
 }
 
+.session-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.session-icon {
+  font-size: 24px;
+}
+
 .session-header h2 {
-  margin: 0 0 16px 0;
+  margin: 0;
   font-size: 24px;
   font-weight: 700;
   color: #1e293b;
 }
 
-.session-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+/* Session Info */
+.session-info {
+  display: flex;
+  align-items: flex-start;
   gap: 16px;
+  margin-bottom: 20px;
+  justify-content: flex-start;
 }
 
-.stat-item {
-  background: white;
-  border-radius: 16px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+.session-date {
+  display: flex;
+  align-items: center;
 }
 
-.stat-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #1e293b;
-  margin-bottom: 4px;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-.stat-change {
-  font-size: 12px;
+.date-badge {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
   font-weight: 600;
-  color: #10b981;
+  font-size: 14px;
+}
+
+.session-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.session-label {
+  font-size: 14px;
+  color: #fff;
+}
+
+.join-session-btn {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: fit-content;
+  align-self: flex-start;
+}
+
+.join-session-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 /* Filters */
@@ -87,141 +113,153 @@
   border-color: #3b82f6;
 }
 
-/* Sessions List */
-.sessions-list {
+/* Products Section */
+.products-section {
   margin-bottom: 24px;
 }
 
-.session-card {
-  background: white;
+.products-title {
+  text-align: left;
+  font-size: 30px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.product-card {
   border-radius: 16px;
   padding: 20px;
-  margin-bottom: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  color: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  text-align: left;
 }
 
-.session-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
 }
 
-.session-header-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.product-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  pointer-events: none;
+}
+
+.product-header {
   margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
 }
 
-.session-type {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.product-id {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.9;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px 8px;
+  border-radius: 6px;
 }
 
-.type-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.product-details {
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.product-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.product-owner {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.product-price {
   font-size: 16px;
+  font-weight: 600;
+  opacity: 0.95;
 }
 
-.type-icon.buy {
-  background: linear-gradient(135deg, #10b981, #059669);
+.product-actions {
+  position: relative;
+  z-index: 1;
+}
+
+.buy-button {
+  background: rgba(255, 255, 255, 0.2);
   color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: fit-content;
+  backdrop-filter: blur(10px);
 }
 
-.type-icon.sell {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
+.buy-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
 }
 
-.type-info {
+/* Loading and Error States */
+.loading-container,
+.error-container {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
 }
 
-.token-name {
-  font-weight: 600;
-  color: #1e293b;
-  font-size: 16px;
-}
-
-.session-time {
-  font-size: 12px;
-  color: #94a3b8;
-}
-
-.status-badge {
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.status-badge.completed {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-}
-
-.status-badge.pending {
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
-}
-
-.status-badge.cancelled {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-}
-
-/* Session Details */
-.session-details {
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
   margin-bottom: 16px;
 }
 
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #f1f5f9;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.detail-row:last-child {
-  border-bottom: none;
-}
-
-.detail-label {
-  font-size: 14px;
-  color: #64748b;
-}
-
-.detail-value {
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.detail-value.profit.positive {
-  color: #10b981;
-}
-
-.detail-value.profit.negative {
+.error-message {
   color: #ef4444;
+  margin-bottom: 16px;
+  font-size: 16px;
 }
 
-/* Session Actions */
-.session-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.action-btn {
-  padding: 8px 16px;
+.retry-button {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
   border: none;
+  padding: 10px 20px;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
@@ -229,141 +267,246 @@
   transition: all 0.3s ease;
 }
 
-.action-btn.confirm {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-}
-
-.action-btn.cancel {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.action-btn.details {
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
-  border: 1px solid rgba(59, 130, 246, 0.2);
-}
-
-.action-btn:hover {
+.retry-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-/* Quick Trade */
-.quick-trade {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.quick-trade h3 {
-  margin: 0 0 20px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.trade-form {
-  display: grid;
-  gap: 16px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
-}
-
-.trade-select,
-.trade-input {
-  padding: 12px 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 12px;
-  font-size: 14px;
-  background: white;
-  transition: all 0.3s ease;
-}
-
-.trade-select:focus,
-.trade-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.trade-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.trade-btn {
-  padding: 12px 20px;
-  border: none;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.trade-btn.buy {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-}
-
-.trade-btn.sell {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
-}
-
-.trade-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+.no-products {
+  text-align: center;
+  padding: 60px 20px;
+  color: #64748b;
+  font-size: 16px;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .session-tab {
     padding: 16px;
+    padding-bottom: 100px;
   }
-  
-  .session-stats {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-  
-  .session-filters {
-    gap: 6px;
-  }
-  
-  .filter-btn {
-    padding: 6px 12px;
-    font-size: 12px;
-  }
-  
-  .session-header-card {
+
+  .session-info {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
-  
-  .session-actions {
-    flex-direction: column;
-  }
-  
-  .trade-buttons {
+
+  .products-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
+
+  .product-card {
+    padding: 16px;
+  }
+
+  .session-filters {
+    gap: 6px;
+  }
+
+  .filter-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .session-header h2 {
+    font-size: 20px;
+  }
+
+  .products-title {
+    font-size: 18px;
+  }
+
+  .product-name {
+    font-size: 16px;
+  }
+
+  .product-price {
+    font-size: 14px;
+  }
+} 
+
+/* Registration Message */
+.registration-message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.registration-message.success {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.registration-message.error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Registration Info */
+.registration-info {
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.registration-info p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #374151;
+}
+
+.registration-info p:last-child {
+  margin-bottom: 0;
+}
+
+/* Registered Badge */
+.registered-badge {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+/* Registration Required */
+.registration-required {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.registration-card {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  max-width: 400px;
+  width: 100%;
+}
+
+.registration-card h3 {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.registration-card p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.registration-card p:last-child {
+  margin-bottom: 0;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Disabled button state */
+.join-session-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.join-session-btn:disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+} 
+
+/* Session Status */
+.session-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.05);
+  display: inline-block;
+  margin-left: 8px;
+}
+
+/* Registration Details */
+.registration-details {
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+.registration-details p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #374151;
+}
+
+.registration-details p:last-child {
+  margin-bottom: 0;
+}
+
+/* Session Closed Message */
+.session-closed-message {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.session-closed-message p {
+  margin: 0;
+  font-size: 14px;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* Session Closed State */
+.session-closed {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.session-closed-card {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  max-width: 400px;
+  width: 100%;
+}
+
+.session-closed-card h3 {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.session-closed-card p {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
 } 

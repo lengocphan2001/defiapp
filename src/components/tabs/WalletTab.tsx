@@ -147,7 +147,7 @@ const WalletTab: React.FC = () => {
                       {usdtAmount.toFixed(2)} USDT
                     </span>
                     <span className="request-address">
-                      {request.address_wallet.substring(0, 8)}...{request.address_wallet.substring(-6)}
+                      {request.address_wallet.substring(0, 2)}...{request.address_wallet.substring(-6)}
                     </span>
                     <span className="request-time">
                       {requestService.formatDate(request.created_at)}

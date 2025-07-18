@@ -85,9 +85,10 @@ export interface InputProps {
 export interface NFT {
   id: string;
   name: string;
-  seller_id: number;
-  seller_name: string;
+  owner_id: number;
+  owner_name: string;
   price: string;
+  type: 'sell' | 'buy';
   status: 'available' | 'sold' | 'cancelled';
   created_at: string;
   updated_at: string;
@@ -96,6 +97,7 @@ export interface NFT {
 export interface CreateNFTData {
   name: string;
   price: number;
+  type?: 'sell' | 'buy';
 }
 
 export interface UpdateNFTData {

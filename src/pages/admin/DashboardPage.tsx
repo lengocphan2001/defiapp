@@ -323,7 +323,7 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <div className="activity-details">
                                          <span className="activity-wallet">
-                       {request.address_wallet.substring(0, 8)}...{request.address_wallet.substring(request.address_wallet.length - 6)}
+                       {request.address_wallet.substring(0, 2)}...{request.address_wallet.substring(request.address_wallet.length - 6)}
                      </span>
                     <span className="activity-time">
                       {requestService.formatDate(request.created_at)}

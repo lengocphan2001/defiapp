@@ -15,11 +15,11 @@ router.get('/available', nftController.getAllAvailable);
 // Get all NFTs (admin only)
 router.get('/admin/all', nftController.getAllNFTs);
 
+// Get user's NFTs (must come before /:id route)
+router.get('/user/my', nftController.getUserNFTs);
+
 // Get NFT by ID
 router.get('/:id', nftController.getNFTById);
-
-// Get user's NFTs
-router.get('/user/my', nftController.getUserNFTs);
 
 // Update NFT price
 router.patch('/:id/price', nftController.updateNFTPrice);

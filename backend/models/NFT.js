@@ -12,7 +12,7 @@ const generateNFTHash = () => {
 
 class NFT {
   static async create(nftData) {
-    const { name, seller_id, price } = nftData;
+    const { name, owner_id, price, type = 'sell' } = nftData;
     
     // Generate unique NFT ID
     let nftId;
@@ -30,20 +30,21 @@ class NFT {
     }
     
     const query = `
-      INSERT INTO nfts (id, name, seller_id, price, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, 'available', NOW(), NOW())
+      INSERT INTO nfts (id, name, owner_id, price, type, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, 'available', NOW(), NOW())
     `;
     
     try {
       const [result] = await pool.execute(query, [
-        nftId, name, seller_id, price
+        nftId, name, owner_id, price, type
       ]);
       
       return {
         id: nftId,
         name,
-        seller_id,
+        owner_id,
         price,
+        type,
         status: 'available',
         created_at: new Date(),
         updated_at: new Date()
@@ -55,9 +56,9 @@ class NFT {
 
   static async findById(nftId) {
     const query = `
-      SELECT n.*, u.username as seller_name 
+      SELECT n.*, u.username as owner_name 
       FROM nfts n 
-      JOIN users u ON n.seller_id = u.id 
+      JOIN users u ON n.owner_id = u.id 
       WHERE n.id = ?
     `;
     
@@ -69,28 +70,28 @@ class NFT {
     }
   }
 
-  static async findBySellerId(sellerId) {
+  static async findByOwnerId(ownerId) {
     const query = `
-      SELECT n.*, u.username as seller_name 
+      SELECT n.*, u.username as owner_name 
       FROM nfts n 
-      JOIN users u ON n.seller_id = u.id 
-      WHERE n.seller_id = ? 
+      JOIN users u ON n.owner_id = u.id 
+      WHERE n.owner_id = ? 
       ORDER BY n.created_at DESC
     `;
     
     try {
-      const [rows] = await pool.execute(query, [sellerId]);
+      const [rows] = await pool.execute(query, [ownerId]);
       return rows;
     } catch (error) {
-      throw new Error(`Error fetching seller NFTs: ${error.message}`);
+      throw new Error(`Error fetching owner NFTs: ${error.message}`);
     }
   }
 
   static async getAllAvailable() {
     const query = `
-      SELECT n.*, u.username as seller_name 
+      SELECT n.*, u.username as owner_name 
       FROM nfts n 
-      JOIN users u ON n.seller_id = u.id 
+      JOIN users u ON n.owner_id = u.id 
       WHERE n.status = 'available' 
       ORDER BY n.created_at DESC
     `;
@@ -105,9 +106,9 @@ class NFT {
 
   static async getAll() {
     const query = `
-      SELECT n.*, u.username as seller_name 
+      SELECT n.*, u.username as owner_name 
       FROM nfts n 
-      JOIN users u ON n.seller_id = u.id 
+      JOIN users u ON n.owner_id = u.id 
       ORDER BY n.created_at DESC
     `;
     

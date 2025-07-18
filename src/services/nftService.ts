@@ -5,7 +5,9 @@ class NFTService {
   // Create new NFT
   async createNFT(nftData: CreateNFTData): Promise<{ success: boolean; message: string; data: NFT }> {
     try {
-      const response = await apiService.post<{ success: boolean; message: string; data: NFT }>('/nfts', nftData);
+      // Always set type to 'sell' if not provided
+      const dataToSend = { ...nftData, type: nftData.type || 'sell' };
+      const response = await apiService.post<{ success: boolean; message: string; data: NFT }>('/nfts', dataToSend);
       return response;
     } catch (error) {
       throw this.handleError(error);
@@ -148,6 +150,18 @@ class NFTService {
         return 'Đã bán';
       case 'cancelled':
         return 'Đã hủy';
+      default:
+        return 'Không xác định';
+    }
+  }
+
+  // Get type text
+  getTypeText(type: string): string {
+    switch (type) {
+      case 'sell':
+        return 'Bán';
+      case 'buy':
+        return 'Mua';
       default:
         return 'Không xác định';
     }

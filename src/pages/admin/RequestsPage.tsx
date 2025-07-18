@@ -136,7 +136,7 @@ const RequestsPage: React.FC = () => {
   };
 
   const formatWalletAddress = (address: string) => {
-    return `${address.substring(0, 8)}...${address.substring(address.length - 6)}`;
+    return `${address.substring(0, 2)}...${address.substring(address.length - 6)}`;
   };
 
   const getStatusIcon = (status: string) => {

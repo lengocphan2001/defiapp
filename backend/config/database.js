@@ -77,8 +77,8 @@ const initDatabase = async () => {
         id INT PRIMARY KEY AUTO_INCREMENT,
         user_id INT NOT NULL,
         type ENUM('deposit', 'withdraw') NOT NULL,
-        smp_amount DECIMAL(20, 8) NOT NULL,
-        usdt_amount DECIMAL(20, 8) NOT NULL,
+        smp_amount DECIMAL(20, 2) NOT NULL,
+        usdt_amount DECIMAL(20, 2) NOT NULL,
         address_wallet VARCHAR(255) NOT NULL,
         status ENUM('pending', 'success', 'failed') DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -95,15 +95,70 @@ const initDatabase = async () => {
       CREATE TABLE IF NOT EXISTS nfts (
         id VARCHAR(18) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        seller_id INT NOT NULL,
-        price DECIMAL(20, 8) NOT NULL DEFAULT 0.00000000,
+        owner_id INT NOT NULL,
+        price DECIMAL(20, 2) NOT NULL DEFAULT 0.00000000,
+        type ENUM('sell', 'buy') DEFAULT 'sell',
         status ENUM('available', 'sold', 'cancelled') DEFAULT 'available',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
-        INDEX idx_seller_id (seller_id),
+        FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_owner_id (owner_id),
+        INDEX idx_type (type),
         INDEX idx_status (status),
         INDEX idx_price (price),
+        INDEX idx_created_at (created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `;
+
+    // Create sessions table
+    const createSessionsTable = `
+      CREATE TABLE IF NOT EXISTS sessions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        session_date DATE NOT NULL,
+        status ENUM('active', 'closed') DEFAULT 'active',
+        registration_fee DECIMAL(20, 2) DEFAULT 20000.00000000,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_session_date (session_date),
+        INDEX idx_session_date (session_date),
+        INDEX idx_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `;
+
+    // Create session_registrations table
+    const createSessionRegistrationsTable = `
+      CREATE TABLE IF NOT EXISTS session_registrations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        session_id INT NOT NULL,
+        user_id INT NOT NULL,
+        registration_fee DECIMAL(20, 2) NOT NULL,
+        status ENUM('registered', 'cancelled') DEFAULT 'registered',
+        registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_session_user (session_id, user_id),
+        INDEX idx_session_id (session_id),
+        INDEX idx_user_id (user_id),
+        INDEX idx_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `;
+
+    // Create nft_transactions table
+    const createNFTTransactionsTable = `
+      CREATE TABLE IF NOT EXISTS nft_transactions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nft_id VARCHAR(18) NOT NULL,
+        buyer_id INT NOT NULL,
+        seller_id INT NOT NULL,
+        price DECIMAL(20, 2) NOT NULL,
+        transaction_type ENUM('buy', 'sell') NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (nft_id) REFERENCES nfts(id) ON DELETE CASCADE,
+        FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_nft_id (nft_id),
+        INDEX idx_buyer_id (buyer_id),
+        INDEX idx_seller_id (seller_id),
         INDEX idx_created_at (created_at)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `;
@@ -112,6 +167,9 @@ const initDatabase = async () => {
     await connection.execute(createReferralCodesTable);
     await connection.execute(createRequestsTable);
     await connection.execute(createNFTsTable);
+    await connection.execute(createSessionsTable);
+    await connection.execute(createSessionRegistrationsTable);
+    await connection.execute(createNFTTransactionsTable);
     
     console.log('✅ Database tables initialized successfully!');
     connection.release();

@@ -117,7 +117,7 @@ const UsersPage: React.FC = () => {
 
   const formatWalletAddress = (address: string) => {
     if (!address) return 'N/A';
-    return `${address.substring(0, 8)}...${address.substring(address.length - 6)}`;
+    return `${address.substring(0, 2)}...${address.substring(address.length - 6)}`;
   };
 
   const getStatusColor = (status: string) => {
