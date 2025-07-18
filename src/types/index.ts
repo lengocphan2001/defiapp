@@ -79,4 +79,33 @@ export interface InputProps {
   error?: string;
   required?: boolean;
   icon?: React.ReactNode;
+}
+
+// NFT types
+export interface NFT {
+  id: string;
+  name: string;
+  seller_id: number;
+  seller_name: string;
+  price: string;
+  status: 'available' | 'sold' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateNFTData {
+  name: string;
+  price: number;
+}
+
+export interface UpdateNFTData {
+  price?: number;
+  status?: 'available' | 'sold' | 'cancelled';
+}
+
+export interface NFTStats {
+  totalNFTs: number;
+  availableNFTs: number;
+  soldNFTs: number;
+  totalValue: number;
 } 

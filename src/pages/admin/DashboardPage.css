@@ -109,6 +109,10 @@
   background: linear-gradient(90deg, #3b82f6, #2563eb);
 }
 
+.stat-card.nft::before {
+  background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+}
+
 .stat-card.secondary::before {
   background: linear-gradient(90deg, #6b7280, #4b5563);
 }
@@ -152,6 +156,38 @@
 .stat-card.secondary .stat-icon {
   background: linear-gradient(135deg, #6b7280, #4b5563);
   color: white;
+}
+
+.stat-card.nft .stat-icon {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+}
+
+.quick-action-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  opacity: 0;
+}
+
+.stat-card:hover .quick-action-btn {
+  opacity: 1;
+}
+
+.quick-action-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
 }
 
 .stat-content {

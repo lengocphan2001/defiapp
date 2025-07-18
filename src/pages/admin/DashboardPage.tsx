@@ -9,10 +9,13 @@ import {
   XCircle,
   RefreshCw,
   Activity,
-  BarChart3
+  BarChart3,
+  Image,
+  ShoppingCart
 } from 'lucide-react';
 import requestService, { Request } from '../../services/requestService';
 import userService from '../../services/userService';
+import nftService from '../../services/nftService';
 import './DashboardPage.css';
 
 interface User {
@@ -34,6 +37,10 @@ interface DashboardStats {
   todaySMP: number;
   successRate: number;
   averageRequestValue: number;
+  totalNFTs: number;
+  availableNFTs: number;
+  soldNFTs: number;
+  totalNFTValue: number;
 }
 
 const DashboardPage: React.FC = () => {
@@ -45,7 +52,11 @@ const DashboardPage: React.FC = () => {
     todayRequests: 0,
     todaySMP: 0,
     successRate: 0,
-    averageRequestValue: 0
+    averageRequestValue: 0,
+    totalNFTs: 0,
+    availableNFTs: 0,
+    soldNFTs: 0,
+    totalNFTValue: 0
   });
   const [recentRequests, setRecentRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,13 +68,15 @@ const DashboardPage: React.FC = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [usersResponse, requestsResponse] = await Promise.all([
+      const [usersResponse, requestsResponse, nftStatsResponse] = await Promise.all([
         userService.getAllUsers(),
-        requestService.getAllRequests()
+        requestService.getAllRequests(),
+        nftService.getNFTStats()
       ]);
 
       const requests = requestsResponse.data;
       const users = usersResponse.data;
+      const nftStats = nftStatsResponse.data;
 
       // Calculate stats
       const pendingRequests = requests.filter(req => req.status === 'pending');
@@ -93,7 +106,11 @@ const DashboardPage: React.FC = () => {
         todayRequests: todayRequests.length,
         todaySMP,
         successRate,
-        averageRequestValue
+        averageRequestValue,
+        totalNFTs: nftStats.totalNFTs,
+        availableNFTs: nftStats.availableNFTs,
+        soldNFTs: nftStats.soldNFTs,
+        totalNFTValue: nftStats.totalValue
       });
 
       // Set recent requests (last 10)
@@ -192,6 +209,27 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        <div className="stat-card nft">
+          <div className="stat-icon">
+            <Image size={24} />
+          </div>
+          <div className="stat-content">
+            <h3>{stats.totalNFTs.toLocaleString()}</h3>
+            <p>Total NFTs</p>
+            <div className="stat-trend positive">
+              <TrendingUp size={14} />
+              <span>{stats.availableNFTs} available</span>
+            </div>
+          </div>
+          <button 
+            className="quick-action-btn"
+            onClick={() => window.location.href = '/admin/nfts'}
+            title="Manage NFTs"
+          >
+            <Image size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Additional Stats */}
@@ -233,6 +271,26 @@ const DashboardPage: React.FC = () => {
           <div className="stat-content">
             <h3>{stats.todaySMP.toLocaleString('vi-VN')}</h3>
             <p>Today's SMP</p>
+          </div>
+        </div>
+
+        <div className="stat-card secondary">
+          <div className="stat-icon">
+            <ShoppingCart size={20} />
+          </div>
+          <div className="stat-content">
+            <h3>{stats.soldNFTs}</h3>
+            <p>Sold NFTs</p>
+          </div>
+        </div>
+
+        <div className="stat-card secondary">
+          <div className="stat-icon">
+            <DollarSign size={20} />
+          </div>
+          <div className="stat-content">
+            <h3>{stats.totalNFTValue.toLocaleString('vi-VN')}</h3>
+            <p>Total NFT Value</p>
           </div>
         </div>
       </div>

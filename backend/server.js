@@ -8,6 +8,7 @@ const { testConnection, initDatabase } = require('./config/database');
 const authRoutes = require('./routes/auth');
 const requestRoutes = require('./routes/requestRoutes');
 const userRoutes = require('./routes/userRoutes');
+const nftRoutes = require('./routes/nftRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -61,6 +62,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/nfts', nftRoutes);
 
 // 404 handler - use a proper catch-all route
 app.use((req, res) => {
@@ -98,6 +100,7 @@ const startServer = async () => {
       console.log(`🔐 Auth API: http://localhost:${PORT}/api/auth`);
       console.log(`📋 Request API: http://localhost:${PORT}/api/requests`);
       console.log(`👥 User API: http://localhost:${PORT}/api/users`);
+      console.log(`🎨 NFT API: http://localhost:${PORT}/api/nfts`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

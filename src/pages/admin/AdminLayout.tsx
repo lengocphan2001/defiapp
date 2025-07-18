@@ -9,7 +9,8 @@ import {
   Settings,
   Home,
   TrendingUp,
-  Shield
+  Shield,
+  Image
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -43,6 +44,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       path: '/admin/requests',
       icon: FileText,
       description: 'Transaction requests'
+    },
+    {
+      name: 'NFTs',
+      path: '/admin/nfts',
+      icon: Image,
+      description: 'NFT management'
     }
   ];
 
