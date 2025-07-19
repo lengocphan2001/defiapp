@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import userService from '../../services/userService';
 import { formatBalance } from '../../utils';
+import ReferralUsersModal from '../modals/ReferralUsersModal';
 import './ProfileTab.css';
 
 const ProfileTab: React.FC = () => {
@@ -15,6 +16,7 @@ const ProfileTab: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showReferralModal, setShowReferralModal] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -133,6 +135,13 @@ const ProfileTab: React.FC = () => {
             <span className="info-label">Mã giới thiệu:</span>
             <span className="info-value referral-code">{user?.referral_code}</span>
           </div>
+          <button 
+            className="show-referral-button" 
+            onClick={() => setShowReferralModal(true)}
+          >
+            <span className="referral-button-icon">👥</span>
+            Xem danh sách người giới thiệu
+          </button>
         </div>
       </div>
 
@@ -169,6 +178,10 @@ const ProfileTab: React.FC = () => {
         <span className="logout-icon">🚪</span>
         Đăng xuất
       </button>
+      <ReferralUsersModal 
+        isOpen={showReferralModal} 
+        onClose={() => setShowReferralModal(false)} 
+      />
     </div>
   );
 };

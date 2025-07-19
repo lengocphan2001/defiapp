@@ -75,6 +75,16 @@ class UserService {
     }
   }
 
+  // Get referral users
+  async getReferralUsers(): Promise<{ success: boolean; data: any[]; message?: string }> {
+    try {
+      const response = await apiService.get<{ success: boolean; data: any[]; message?: string }>('/users/referrals');
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   // Helper method to handle errors
   private handleError(error: any): Error {
     if (error.response?.data?.message) {

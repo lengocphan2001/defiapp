@@ -12,6 +12,9 @@ router.get('/admin/all', userController.getAllUsers);
 // Get user statistics (admin only)
 router.get('/admin/stats', userController.getUserStats);
 
+// Get referral users (user can get their own referrals) - MUST come before /:id route
+router.get('/referrals', userController.getReferralUsers);
+
 // Get user by ID (user can get their own data, admin can get any user)
 router.get('/:id', userController.getUserById);
 

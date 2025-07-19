@@ -146,6 +146,64 @@ const userController = {
     }
   },
 
+  // Get referral users
+  async getReferralUsers(req, res) {
+    try {
+      const userId = req.user.id;
+      console.log('Getting referral users for user ID:', userId);
+
+      // First, get the current user's username (which is stored in referred_by field of referral users)
+      const [currentUser] = await pool.execute(
+        'SELECT username FROM users WHERE id = ?',
+        [userId]
+      );
+
+      if (currentUser.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      const currentUsername = currentUser[0].username;
+      console.log('Current user username:', currentUsername);
+
+      // Get all users referred by this user (they have current user's username in referred_by field)
+      const query = `
+        SELECT 
+          id, 
+          username, 
+          phone, 
+          fullname, 
+          balance, 
+          address_wallet, 
+          status, 
+          created_at,
+          updated_at
+        FROM users 
+        WHERE referred_by = ?
+        ORDER BY created_at DESC
+      `;
+      
+      const [rows] = await pool.execute(query, [currentUsername]);
+      console.log('Found referral users:', rows.length);
+      console.log('Referral users data:', rows);
+      
+      res.json({
+        success: true,
+        data: rows
+      });
+
+    } catch (error) {
+      console.error('Error fetching referral users:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error.message
+      });
+    }
+  },
+
   // Update user balance (admin only)
   async updateUserBalance(req, res) {
     try {
