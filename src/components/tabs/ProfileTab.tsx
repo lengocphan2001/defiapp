@@ -17,6 +17,8 @@ const ProfileTab: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showReferralModal, setShowReferralModal] = useState(false);
+  const [referralCount, setReferralCount] = useState(0);
+  const [loadingReferralCount, setLoadingReferralCount] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -24,6 +26,24 @@ const ProfileTab: React.FC = () => {
       [field]: value
     }));
   };
+
+  const fetchReferralCount = async () => {
+    setLoadingReferralCount(true);
+    try {
+      const response = await userService.getReferralUsers();
+      if (response.success) {
+        setReferralCount(response.data.length);
+      }
+    } catch (error) {
+      console.error('Error fetching referral count:', error);
+    } finally {
+      setLoadingReferralCount(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReferralCount();
+  }, []);
 
   const handleSave = async () => {
     if (!formData.phone.trim()) {
@@ -121,7 +141,13 @@ const ProfileTab: React.FC = () => {
         <div className="section-content">
           <div className="info-item">
             <span className="info-label">Trực tiếp:</span>
-            <span className="info-value">0</span>
+            <span className="info-value">
+              {loadingReferralCount ? (
+                <span className="loading-dots">...</span>
+              ) : (
+                referralCount
+              )}
+            </span>
           </div>
           <div className="info-item">
             <span className="info-label">Đội nhóm:</span>
@@ -140,7 +166,7 @@ const ProfileTab: React.FC = () => {
             onClick={() => setShowReferralModal(true)}
           >
             <span className="referral-button-icon">👥</span>
-            Xem danh sách người giới thiệu
+            Xem danh sách người giới thiệu ({referralCount})
           </button>
         </div>
       </div>
@@ -180,7 +206,10 @@ const ProfileTab: React.FC = () => {
       </button>
       <ReferralUsersModal 
         isOpen={showReferralModal} 
-        onClose={() => setShowReferralModal(false)} 
+        onClose={() => {
+          setShowReferralModal(false);
+          fetchReferralCount(); // Refresh count when modal closes
+        }} 
       />
     </div>
   );

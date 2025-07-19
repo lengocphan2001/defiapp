@@ -231,6 +231,24 @@
   font-size: 16px;
 }
 
+.loading-dots {
+  display: inline-block;
+  animation: loadingDots 1.5s infinite;
+  color: #4caf50;
+}
+
+@keyframes loadingDots {
+  0%, 20% {
+    content: ".";
+  }
+  40% {
+    content: "..";
+  }
+  60%, 100% {
+    content: "...";
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .profile-tab {
