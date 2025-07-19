@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import nftService from '../../services/nftService';
-import sessionService from '../../services/sessionService';
+import { sessionService } from '../../services/sessionService';
 import { NFT } from '../../types';
 import { formatBalance, formatPrice } from '../../utils';
 import './NFTTab.css';

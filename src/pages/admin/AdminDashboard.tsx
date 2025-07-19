@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
 import DashboardPage from './DashboardPage';
 import UsersPage from './UsersPage';
+import SessionsPage from './SessionsPage';
 import RequestsPage from './RequestsPage';
 import NFTsPage from './NFTsPage';
 
@@ -12,6 +13,7 @@ const AdminDashboard: React.FC = () => {
       <Routes>
         <Route index element={<DashboardPage />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="sessions" element={<SessionsPage />} />
         <Route path="requests" element={<RequestsPage />} />
         <Route path="nfts" element={<NFTsPage />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />

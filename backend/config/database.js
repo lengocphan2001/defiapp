@@ -115,13 +115,15 @@ const initDatabase = async () => {
       CREATE TABLE IF NOT EXISTS sessions (
         id INT AUTO_INCREMENT PRIMARY KEY,
         session_date DATE NOT NULL,
+        time_start TIME DEFAULT '09:00:00',
         status ENUM('active', 'closed') DEFAULT 'active',
         registration_fee DECIMAL(20, 2) DEFAULT 20000.00000000,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY unique_session_date (session_date),
         INDEX idx_session_date (session_date),
-        INDEX idx_status (status)
+        INDEX idx_status (status),
+        INDEX idx_time_start (time_start)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `;
 
@@ -152,6 +154,7 @@ const initDatabase = async () => {
         seller_id INT NOT NULL,
         price DECIMAL(20, 2) NOT NULL,
         transaction_type ENUM('buy', 'sell') NOT NULL,
+        status ENUM('pending', 'completed', 'cancelled') DEFAULT 'completed',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (nft_id) REFERENCES nfts(id) ON DELETE CASCADE,
         FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -159,6 +162,7 @@ const initDatabase = async () => {
         INDEX idx_nft_id (nft_id),
         INDEX idx_buyer_id (buyer_id),
         INDEX idx_seller_id (seller_id),
+        INDEX idx_status (status),
         INDEX idx_created_at (created_at)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `;
@@ -170,6 +174,36 @@ const initDatabase = async () => {
     await connection.execute(createSessionsTable);
     await connection.execute(createSessionRegistrationsTable);
     await connection.execute(createNFTTransactionsTable);
+    
+    // Add status column to existing nft_transactions table if it doesn't exist
+    try {
+      await connection.execute(`
+        ALTER TABLE nft_transactions 
+        ADD COLUMN status ENUM('pending', 'completed', 'cancelled') DEFAULT 'completed' AFTER transaction_type
+      `);
+      console.log('✅ Added status column to nft_transactions table');
+    } catch (error) {
+      if (error.code === 'ER_DUP_FIELDNAME') {
+        console.log('ℹ️ Status column already exists in nft_transactions table');
+      } else {
+        console.log('ℹ️ Could not add status column (might already exist):', error.message);
+      }
+    }
+    
+    // Add index for status column if it doesn't exist
+    try {
+      await connection.execute(`
+        ALTER TABLE nft_transactions 
+        ADD INDEX idx_status (status)
+      `);
+      console.log('✅ Added status index to nft_transactions table');
+    } catch (error) {
+      if (error.code === 'ER_DUP_KEYNAME') {
+        console.log('ℹ️ Status index already exists in nft_transactions table');
+      } else {
+        console.log('ℹ️ Could not add status index (might already exist):', error.message);
+      }
+    }
     
     console.log('✅ Database tables initialized successfully!');
     connection.release();

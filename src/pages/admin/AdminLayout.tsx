@@ -10,7 +10,8 @@ import {
   Home,
   TrendingUp,
   Shield,
-  Image
+  Image,
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -38,6 +39,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       path: '/admin/users',
       icon: Users,
       description: 'User management'
+    },
+    {
+      name: 'Sessions',
+      path: '/admin/sessions',
+      icon: Calendar,
+      description: 'Session management'
     },
     {
       name: 'Requests',

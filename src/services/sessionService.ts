@@ -1,25 +1,32 @@
 import apiService from './api';
 
-interface SessionData {
-  session_id: number;
+export interface Session {
+  id: number;
   session_date: string;
+  time_start: string;
   status: 'active' | 'closed';
   registration_fee: number;
+  registration_count?: number;
+  total_fees?: number;
+  created_at: string;
+  updated_at: string;
 }
 
-interface RegistrationData {
-  registration_id: number;
+export interface SessionRegistration {
+  id: number;
   session_id: number;
+  user_id: number;
   registration_fee: number;
-  registered_at: string;
+  status: 'registered' | 'cancelled';
+  registered_at: string | null;
+  username?: string;
+  fullname?: string;
+  session_date: string | null;
+  time_start: string | null;
+  session_status: string | null;
 }
 
-interface RegistrationStatus {
-  is_registered: boolean;
-  registration: RegistrationData | null;
-}
-
-interface SessionStats {
+export interface SessionStats {
   session_id: number;
   session_date: string;
   registration_count: number;
@@ -27,121 +34,142 @@ interface SessionStats {
   registration_fee: number;
 }
 
-class SessionService {
-  // Get today's session info
-  async getTodaySession(): Promise<{ success: boolean; data: SessionData }> {
-    try {
-      const response = await apiService.get<{ success: boolean; data: SessionData }>('/sessions/today');
-      return response;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
+export const sessionService = {
+  // Get today's session
+  getTodaySession: async (): Promise<{ success: boolean; data: Session }> => {
+    const response = await apiService.get<{ success: boolean; data: Session }>('/sessions/today');
+    return response;
+  },
 
   // Register for today's session
-  async registerForSession(): Promise<{ success: boolean; message: string; data: RegistrationData }> {
-    try {
-      const response = await apiService.post<{ success: boolean; message: string; data: RegistrationData }>('/sessions/register', {});
-      return response;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
+  registerForSession: async (): Promise<any> => {
+    const response = await apiService.post<any>('/sessions/register', {});
+    return response;
+  },
 
-  // Check if user is registered for today's session
-  async checkRegistration(): Promise<{ success: boolean; data: RegistrationStatus }> {
-    try {
-      const response = await apiService.get<{ success: boolean; data: RegistrationStatus }>('/sessions/check-registration');
-      return response;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
+  // Check registration status
+  checkRegistration: async (): Promise<{ success: boolean; data: { is_registered: boolean; registration: SessionRegistration | null } }> => {
+    const response = await apiService.get<{ success: boolean; data: { is_registered: boolean; registration: SessionRegistration | null } }>('/sessions/check-registration');
+    return response;
+  },
 
   // Get available NFTs for registered users only
-  async getAvailableNFTs(): Promise<{ success: boolean; data: any[] }> {
-    try {
-      const response = await apiService.get<{ success: boolean; data: any[] }>('/sessions/available-nfts');
-      return response;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  // Get session statistics (admin only)
-  async getSessionStats(): Promise<{ success: boolean; data: SessionStats }> {
-    try {
-      const response = await apiService.get<{ success: boolean; data: SessionStats }>('/sessions/stats');
-      return response;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  // Get registered users for today's session (admin only)
-  async getRegisteredUsers(): Promise<{ success: boolean; data: any[] }> {
-    try {
-      const response = await apiService.get<{ success: boolean; data: any[] }>('/sessions/registered-users');
-      return response;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  // Close today's session (admin only)
-  async closeSession(): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await apiService.post<{ success: boolean; message: string }>('/sessions/close', {});
-      return response;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  // Get user's transaction history
-  async getTransactionHistory(): Promise<{ success: boolean; data: any[] }> {
-    try {
-      const response = await apiService.get<{ success: boolean; data: any[] }>('/sessions/transaction-history');
-      return response;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
+  getAvailableNFTs: async (): Promise<{ success: boolean; data: any[] }> => {
+    const response = await apiService.get<{ success: boolean; data: any[] }>('/sessions/available-nfts');
+    return response;
+  },
 
   // Buy NFT
-  async buyNFT(nftId: string): Promise<{ success: boolean; message: string; data: any }> {
-    try {
-      const response = await apiService.post<{ success: boolean; message: string; data: any }>(`/sessions/buy-nft/${nftId}`, {});
-      return response;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
+  buyNFT: async (nftId: string): Promise<{ success: boolean; message: string; data: any }> => {
+    const response = await apiService.post<{ success: boolean; message: string; data: any }>(`/sessions/buy-nft/${nftId}`, {});
+    return response;
+  },
 
-  // Helper method to handle errors
-  private handleError(error: any): Error {
-    if (error.response?.data?.message) {
-      return new Error(error.response.data.message);
-    }
-    if (error.message) {
-      return new Error(error.message);
-    }
-    return new Error('An unexpected error occurred');
-  }
+  // Buy NFT without deducting balance immediately
+  buyNFTWithoutDeduction: async (nftId: string): Promise<{ success: boolean; message: string; data: any }> => {
+    const response = await apiService.post<{ success: boolean; message: string; data: any }>(`/sessions/buy-nft-without-deduction/${nftId}`, {});
+    return response;
+  },
 
-  // Format session date for display
-  formatSessionDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit'
-    });
-  }
+  // Process pending payments (checkout)
+  processPendingPayments: async (): Promise<{ success: boolean; message: string; data: any }> => {
+    const response = await apiService.post<{ success: boolean; message: string; data: any }>('/sessions/process-pending-payments', {});
+    return response;
+  },
 
-  // Format registration fee for display
-  formatRegistrationFee(fee: number): string {
-    return fee.toLocaleString('vi-VN') + ' SMP';
-  }
-}
+  // Get session statistics (admin only)
+  getSessionStats: async (): Promise<SessionStats> => {
+    const response = await apiService.get<{ success: boolean; data: SessionStats }>('/sessions/stats');
+    return response.data;
+  },
 
-export default new SessionService(); 
+  // Get registered users (admin only)
+  getRegisteredUsers: async (): Promise<SessionRegistration[]> => {
+    const response = await apiService.get<{ success: boolean; data: SessionRegistration[] }>('/sessions/registered-users');
+    return response.data;
+  },
+
+  // Close today's session (admin only)
+  closeSession: async (): Promise<any> => {
+    const response = await apiService.post<any>('/sessions/close', {});
+    return response;
+  },
+
+  // Get all sessions (admin only)
+  getAllSessions: async (): Promise<Session[]> => {
+    const response = await apiService.get<{ success: boolean; data: Session[] }>('/sessions/all');
+    return response.data;
+  },
+
+  // Get session by ID (admin only)
+  getSessionById: async (sessionId: number): Promise<Session> => {
+    const response = await apiService.get<{ success: boolean; data: Session }>(`/sessions/${sessionId}`);
+    return response.data;
+  },
+
+  // Update session time (admin only)
+  updateSessionTime: async (sessionId: number, timeStart: string): Promise<any> => {
+    const response = await apiService.put<any>(`/sessions/${sessionId}/time`, { time_start: timeStart });
+    return response;
+  },
+
+  // Update session registration fee (admin only)
+  updateSessionFee: async (sessionId: number, registrationFee: number): Promise<any> => {
+    const response = await apiService.put<any>(`/sessions/${sessionId}/fee`, { registration_fee: registrationFee });
+    return response;
+  },
+
+  // Get user's transaction history
+  getTransactionHistory: async (): Promise<{ success: boolean; data: any[] }> => {
+    const response = await apiService.get<{ success: boolean; data: any[] }>('/sessions/transaction-history');
+    return response;
+  },
+
+  // Get available sessions (from today onwards)
+  getAvailableSessions: async (): Promise<{ success: boolean; data: Session[] }> => {
+    const response = await apiService.get<{ success: boolean; data: Session[] }>('/sessions/available');
+    return response;
+  },
+
+  // Register for specific session
+  registerForSpecificSession: async (sessionId: number): Promise<any> => {
+    const response = await apiService.post<any>(`/sessions/register/${sessionId}`, {});
+    return response;
+  },
+
+  // Get user's session registrations
+  getUserSessionRegistrations: async (): Promise<{ success: boolean; data: SessionRegistration[] }> => {
+    const response = await apiService.get<{ success: boolean; data: SessionRegistration[] }>('/sessions/my-registrations');
+    return response;
+  },
+
+  // Check if user is registered for specific session
+  checkUserRegistrationForSession: async (sessionId: number): Promise<{ success: boolean; data: { is_registered: boolean } }> => {
+    const response = await apiService.get<{ success: boolean; data: { is_registered: boolean } }>(`/sessions/check-registration/${sessionId}`);
+    return response;
+  },
+
+  // Create new session (admin only)
+  createSession: async (sessionData: { session_date: string; time_start?: string; registration_fee?: number }): Promise<any> => {
+    const response = await apiService.post<any>('/sessions', sessionData);
+    return response;
+  },
+
+  // Update session (admin only)
+  updateSession: async (sessionId: number, sessionData: { session_date?: string; time_start?: string; status?: string; registration_fee?: number }): Promise<any> => {
+    const response = await apiService.put<any>(`/sessions/${sessionId}`, sessionData);
+    return response;
+  },
+
+  // Delete session (admin only)
+  deleteSession: async (sessionId: number): Promise<any> => {
+    const response = await apiService.delete<any>(`/sessions/${sessionId}`);
+    return response;
+  },
+
+  // Get sessions with pagination (admin only)
+  getSessionsWithPagination: async (page: number = 1, limit: number = 10): Promise<any> => {
+    const response = await apiService.get<any>(`/sessions/paginated?page=${page}&limit=${limit}`);
+    return response;
+  }
+}; 

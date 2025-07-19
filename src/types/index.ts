@@ -110,4 +110,29 @@ export interface NFTStats {
   availableNFTs: number;
   soldNFTs: number;
   totalValue: number;
+}
+
+// Session types
+export interface Session {
+  id: number;
+  session_date: string;
+  time_start: string;
+  status: string;
+  registration_fee: number;
+  registration_count: number;
+  total_fees: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SessionRegistration {
+  id: number;
+  session_id: number;
+  user_id: number;
+  registration_fee: number;
+  status: string;
+  registered_at: string;
+  session_date: string;
+  time_start: string;
+  session_status: string;
 } 
