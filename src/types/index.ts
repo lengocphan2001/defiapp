@@ -90,6 +90,7 @@ export interface NFT {
   price: string;
   type: 'sell' | 'buy';
   status: 'available' | 'sold' | 'cancelled';
+  payment_status?: 'pending' | 'completed' | 'unpaid';
   created_at: string;
   updated_at: string;
 }

@@ -216,11 +216,10 @@ const nftController = {
       const userId = req.user.id;
 
       // Validate status
-      const validStatuses = ['available', 'sold', 'cancelled'];
-      if (!validStatuses.includes(status)) {
+      if (!status || !['available', 'sold', 'cancelled'].includes(status)) {
         return res.status(400).json({
           success: false,
-          message: 'Invalid status. Must be available, sold, or cancelled.'
+          message: 'Valid status is required (available, sold, cancelled)'
         });
       }
 
@@ -260,6 +259,125 @@ const nftController = {
         success: false,
         message: 'Internal server error',
         error: error.message
+      });
+    }
+  },
+
+  // Pay for specific NFT
+  async payNFT(req, res) {
+    try {
+      const { id } = req.params;
+      const { price } = req.body;
+      const userId = req.user.id;
+
+      // Validate price
+      if (!price || isNaN(price) || parseFloat(price) < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Valid price is required'
+        });
+      }
+
+      const connection = await require('../config/database').pool.getConnection();
+      
+      try {
+        await connection.beginTransaction();
+
+        // Check if NFT exists and get its details
+        const [nftRows] = await connection.execute(
+          'SELECT * FROM nfts WHERE id = ?',
+          [id]
+        );
+
+        if (nftRows.length === 0) {
+          throw new Error('NFT không tồn tại');
+        }
+
+        const nft = nftRows[0];
+
+        // Check if user owns this NFT
+        if (nft.owner_id !== userId) {
+          throw new Error('Bạn không sở hữu NFT này');
+        }
+
+        // Check if there's a pending transaction for this NFT
+        const [pendingTransactions] = await connection.execute(`
+          SELECT * FROM nft_transactions 
+          WHERE nft_id = ? AND buyer_id = ? AND status = 'pending'
+        `, [id, userId]);
+
+        if (pendingTransactions.length === 0) {
+          throw new Error('Không có giao dịch nào cần thanh toán cho NFT này');
+        }
+
+        const transaction = pendingTransactions[0];
+        const transactionPrice = parseFloat(transaction.price);
+
+        // Check user balance
+        const [userRows] = await connection.execute(
+          'SELECT balance FROM users WHERE id = ?',
+          [userId]
+        );
+
+        if (userRows.length === 0) {
+          throw new Error('Người dùng không tồn tại');
+        }
+
+        const userBalance = parseFloat(userRows[0].balance);
+
+        if (userBalance < transactionPrice) {
+          throw new Error(`Số dư không đủ để thanh toán. Cần: ${transactionPrice}, Có: ${userBalance}`);
+        }
+
+        // Process the payment
+        // Deduct balance from buyer
+        await connection.execute(
+          'UPDATE users SET balance = balance - ? WHERE id = ?',
+          [transactionPrice, userId]
+        );
+
+        // Add balance to seller
+        await connection.execute(
+          'UPDATE users SET balance = balance + ? WHERE id = ?',
+          [transactionPrice, transaction.seller_id]
+        );
+
+        // Update transaction status to completed
+        await connection.execute(
+          'UPDATE nft_transactions SET status = ? WHERE id = ?',
+          ['completed', transaction.id]
+        );
+
+        // Update NFT payment status
+        await connection.execute(
+          'UPDATE nfts SET payment_status = ? WHERE id = ?',
+          ['completed', id]
+        );
+
+        await connection.commit();
+
+        res.json({
+          success: true,
+          message: 'Thanh toán NFT thành công!',
+          data: {
+            nft_id: id,
+            amount_paid: transactionPrice,
+            new_balance: userBalance - transactionPrice
+          }
+        });
+
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+
+    } catch (error) {
+      console.error('Error paying NFT:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message
       });
     }
   },

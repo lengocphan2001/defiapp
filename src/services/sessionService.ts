@@ -36,8 +36,8 @@ export interface SessionStats {
 
 export const sessionService = {
   // Get today's session
-  getTodaySession: async (): Promise<{ success: boolean; data: Session }> => {
-    const response = await apiService.get<{ success: boolean; data: Session }>('/sessions/today');
+  getTodaySession: async (): Promise<{ success: boolean; data: Session | null; message?: string }> => {
+    const response = await apiService.get<{ success: boolean; data: Session | null; message?: string }>('/sessions/today');
     return response;
   },
 

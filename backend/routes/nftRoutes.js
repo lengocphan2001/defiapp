@@ -27,6 +27,9 @@ router.patch('/:id/price', nftController.updateNFTPrice);
 // Update NFT status
 router.patch('/:id/status', nftController.updateNFTStatus);
 
+// Pay for specific NFT
+router.post('/:id/pay', nftController.payNFT);
+
 // Delete NFT
 router.delete('/:id', nftController.deleteNFT);
 

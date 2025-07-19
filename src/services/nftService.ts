@@ -74,6 +74,16 @@ class NFTService {
     }
   }
 
+  // Pay for specific NFT
+  async payNFT(id: string, price: number): Promise<{ success: boolean; message: string; data: any }> {
+    try {
+      const response = await apiService.post<{ success: boolean; message: string; data: any }>(`/nfts/${id}/pay`, { price });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   // Delete NFT
   async deleteNFT(id: string): Promise<{ success: boolean; message: string }> {
     try {

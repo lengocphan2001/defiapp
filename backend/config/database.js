@@ -99,12 +99,14 @@ const initDatabase = async () => {
         price DECIMAL(20, 2) NOT NULL DEFAULT 0.00000000,
         type ENUM('sell', 'buy') DEFAULT 'sell',
         status ENUM('available', 'sold', 'cancelled') DEFAULT 'available',
+        payment_status ENUM('pending', 'completed', 'unpaid') DEFAULT 'unpaid',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
         INDEX idx_owner_id (owner_id),
         INDEX idx_type (type),
         INDEX idx_status (status),
+        INDEX idx_payment_status (payment_status),
         INDEX idx_price (price),
         INDEX idx_created_at (created_at)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -202,6 +204,61 @@ const initDatabase = async () => {
         console.log('ℹ️ Status index already exists in nft_transactions table');
       } else {
         console.log('ℹ️ Could not add status index (might already exist):', error.message);
+      }
+    }
+    
+    // Add payment_status column to existing nfts table if it doesn't exist
+    try {
+      await connection.execute(`
+        ALTER TABLE nfts 
+        ADD COLUMN payment_status ENUM('pending', 'completed', 'unpaid') DEFAULT 'unpaid' AFTER status
+      `);
+      console.log('✅ Added payment_status column to nfts table');
+      
+      // Update existing NFTs to have completed payment_status if they have completed transactions
+      await connection.execute(`
+        UPDATE nfts n 
+        SET payment_status = 'completed' 
+        WHERE EXISTS (
+            SELECT 1 FROM nft_transactions nt 
+            WHERE nt.nft_id = n.id 
+            AND nt.status = 'completed'
+        )
+      `);
+      console.log('✅ Updated existing NFTs with completed payment status');
+      
+      // Update NFTs with pending transactions to have pending payment_status
+      await connection.execute(`
+        UPDATE nfts n 
+        SET payment_status = 'pending' 
+        WHERE EXISTS (
+            SELECT 1 FROM nft_transactions nt 
+            WHERE nt.nft_id = n.id 
+            AND nt.status = 'pending'
+        )
+      `);
+      console.log('✅ Updated existing NFTs with pending payment status');
+      
+    } catch (error) {
+      if (error.code === 'ER_DUP_FIELDNAME') {
+        console.log('ℹ️ Payment_status column already exists in nfts table');
+      } else {
+        console.log('ℹ️ Could not add payment_status column (might already exist):', error.message);
+      }
+    }
+    
+    // Add index for payment_status column if it doesn't exist
+    try {
+      await connection.execute(`
+        ALTER TABLE nfts 
+        ADD INDEX idx_payment_status (payment_status)
+      `);
+      console.log('✅ Added payment_status index to nfts table');
+    } catch (error) {
+      if (error.code === 'ER_DUP_KEYNAME') {
+        console.log('ℹ️ Payment_status index already exists in nfts table');
+      } else {
+        console.log('ℹ️ Could not add payment_status index (might already exist):', error.message);
       }
     }
     

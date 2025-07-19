@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { sessionService, Session, SessionRegistration } from '../../services/sessionService';
 import { NFT } from '../../types';
 import { formatBalance, formatPrice, formatRegistrationFee } from '../../utils';
+import Toast from '../common/Toast';
 import './SessionTab.css';
 
 const SessionTab: React.FC = () => {
@@ -16,7 +17,6 @@ const SessionTab: React.FC = () => {
   const [sessionInfo, setSessionInfo] = useState<any>(null);
   const [isRegistered, setIsRegistered] = useState(false);
   const [registrationLoading, setRegistrationLoading] = useState(false);
-  const [registrationMessage, setRegistrationMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [registrationInfo, setRegistrationInfo] = useState<any>(null);
   const [registeringSession, setRegisteringSession] = useState<number | null>(null);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
@@ -24,6 +24,29 @@ const SessionTab: React.FC = () => {
   const [buyingNFT, setBuyingNFT] = useState<string | null>(null);
   const [cart, setCart] = useState<NFT[]>([]);
   const [showCart, setShowCart] = useState(false);
+  
+  // Toast state
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'warning' | 'info';
+    isVisible: boolean;
+  }>({
+    message: '',
+    type: 'info',
+    isVisible: false
+  });
+
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setToast({
+      message,
+      type,
+      isVisible: true
+    });
+  };
+
+  const hideToast = () => {
+    setToast(prev => ({ ...prev, isVisible: false }));
+  };
 
   useEffect(() => {
     fetchSessionData();
@@ -43,7 +66,7 @@ const SessionTab: React.FC = () => {
       if (sessionsResponse.success) {
         setAvailableSessions(sessionsResponse.data);
       } else {
-        setError('Không thể tải danh sách phiên giao dịch');
+        showToast('Không thể tải danh sách phiên giao dịch', 'error');
         return;
       }
       
@@ -53,8 +76,13 @@ const SessionTab: React.FC = () => {
       
       // Get today's session info
       const sessionResponse = await sessionService.getTodaySession();
-      if (sessionResponse.success) {
+      if (sessionResponse.success && sessionResponse.data) {
         setSessionInfo(sessionResponse.data);
+      } else {
+        // Handle case where no session exists for today
+        setSessionInfo(null);
+        showToast('Không có phiên giao dịch nào cho hôm nay. Vui lòng liên hệ admin để tạo phiên.', 'warning');
+        return;
       }
       
       // Check if user is registered
@@ -75,7 +103,9 @@ const SessionTab: React.FC = () => {
       if (err instanceof Error) {
         const errorText = err.message.toLowerCase();
         
-        if (errorText.includes('401') || errorText.includes('unauthorized')) {
+        if (errorText.includes('no session found for today') || errorText.includes('không có phiên nào cho hôm nay')) {
+          errorMessage = 'Không có phiên giao dịch nào cho hôm nay. Vui lòng liên hệ admin để tạo phiên.';
+        } else if (errorText.includes('401') || errorText.includes('unauthorized')) {
           errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
         } else if (errorText.includes('403') || errorText.includes('forbidden')) {
           errorMessage = 'Bạn không có quyền truy cập.';
@@ -90,7 +120,7 @@ const SessionTab: React.FC = () => {
         }
       }
       
-      setError(errorMessage);
+      showToast(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
@@ -103,9 +133,9 @@ const SessionTab: React.FC = () => {
       if (response.success) {
         setNfts(response.data);
       } else {
+        showToast('Không thể tải danh sách NFT', 'error');
       }
     } catch (err) {
-      
       // Handle specific error types
       let errorMessage = 'Có lỗi xảy ra khi tải dữ liệu NFT';
       
@@ -131,34 +161,35 @@ const SessionTab: React.FC = () => {
         }
       }
       
-      setError(errorMessage);
+      showToast(errorMessage, 'error');
     }
   };
 
   const handleRegisterForSession = async (sessionId: number) => {
     try {
       setRegisteringSession(sessionId);
-      setRegistrationMessage(null);
       
       const response = await sessionService.registerForSpecificSession(sessionId);
       
       if (response.success) {
-        setRegistrationMessage({ type: 'success', text: response.message });
+        showToast(response.message, 'success');
         // Refresh data to update registrations and user balance
         await fetchSessionData();
         // Refresh user data to update balance
         window.location.reload();
       } else {
-        setRegistrationMessage({ type: 'error', text: response.message });
+        showToast(response.message, 'error');
       }
     } catch (err) {
       let errorMessage = 'Có lỗi xảy ra khi đăng ký phiên';
+      let showDepositModal = false;
       
       if (err instanceof Error) {
         const errorText = err.message.toLowerCase();
         
         if (errorText.includes('insufficient balance') || errorText.includes('không đủ số dư')) {
           errorMessage = 'Số dư không đủ để đăng ký phiên. Vui lòng nạp thêm tiền.';
+          showDepositModal = true;
         } else if (errorText.includes('already registered') || errorText.includes('đã đăng ký')) {
           errorMessage = 'Bạn đã đăng ký phiên này rồi.';
         } else if (errorText.includes('session not found') || errorText.includes('không tìm thấy phiên')) {
@@ -178,7 +209,16 @@ const SessionTab: React.FC = () => {
         }
       }
       
-      setRegistrationMessage({ type: 'error', text: errorMessage });
+      showToast(errorMessage, 'error');
+      
+      // Show deposit modal if insufficient balance
+      if (showDepositModal) {
+        // You can trigger a deposit modal here if you have one
+        setTimeout(() => {
+          showToast('Bạn có muốn nạp tiền ngay bây giờ không?', 'info');
+          // You can add navigation to deposit page or show deposit modal
+        }, 2000);
+      }
     } finally {
       setRegisteringSession(null);
     }
@@ -192,14 +232,14 @@ const SessionTab: React.FC = () => {
       const response = await sessionService.buyNFTWithoutDeduction(nft.id);
       
       if (response.success) {
-        alert(`Đã mua ${nft.name}! NFT sẽ xuất hiện trong tab NFT. Thanh toán sẽ được thực hiện khi bạn click 'Thanh toán' trong tab NFT.`);
+        showToast(`Đã mua ${nft.name}! NFT sẽ xuất hiện trong tab NFT. Thanh toán sẽ được thực hiện khi bạn click 'Thanh toán' trong tab NFT.`, 'success');
         // Refresh the available NFTs list
         await fetchAvailableNFTs();
       } else {
-        alert(response.message || 'Có lỗi xảy ra khi mua NFT');
+        showToast(response.message || 'Có lỗi xảy ra khi mua NFT', 'error');
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Có lỗi xảy ra khi mua NFT');
+      showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi mua NFT', 'error');
     } finally {
       setBuyingNFT(null);
     }
@@ -209,12 +249,12 @@ const SessionTab: React.FC = () => {
     // Check if NFT is already in cart
     const isInCart = cart.some(cartItem => cartItem.id === nft.id);
     if (isInCart) {
-      alert('NFT này đã có trong giỏ hàng!');
+      showToast('NFT này đã có trong giỏ hàng!', 'warning');
       return;
     }
     
     setCart(prevCart => [...prevCart, nft]);
-    alert(`Đã thêm ${nft.name} vào giỏ hàng!`);
+    showToast(`Đã thêm ${nft.name} vào giỏ hàng!`, 'success');
   };
 
   const handleRemoveFromCart = (nftId: string) => {
@@ -223,7 +263,7 @@ const SessionTab: React.FC = () => {
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
-      alert('Giỏ hàng trống!');
+      showToast('Giỏ hàng trống!', 'warning');
       return;
     }
 
@@ -235,7 +275,7 @@ const SessionTab: React.FC = () => {
       
       // Check if user has enough balance
       if (user && parseFloat(user.balance || '0') < totalPrice) {
-        alert('Số dư không đủ để thanh toán. Vui lòng nạp thêm tiền.');
+        showToast('Số dư không đủ để thanh toán. Vui lòng nạp thêm tiền.', 'warning');
         return;
       }
 
@@ -247,9 +287,9 @@ const SessionTab: React.FC = () => {
       const failedCount = results.length - successCount;
       
       if (successCount > 0) {
-        alert(`Thanh toán thành công ${successCount} NFT${successCount > 1 ? 's' : ''}!`);
+        showToast(`Thanh toán thành công ${successCount} NFT${successCount > 1 ? 's' : ''}!`, 'success');
         if (failedCount > 0) {
-          alert(`${failedCount} NFT${failedCount > 1 ? 's' : ''} thanh toán thất bại.`);
+          showToast(`${failedCount} NFT${failedCount > 1 ? 's' : ''} thanh toán thất bại.`, 'error');
         }
         
         // Clear cart and refresh data
@@ -258,10 +298,10 @@ const SessionTab: React.FC = () => {
         await fetchAvailableNFTs();
         window.location.reload(); // Refresh user balance
       } else {
-        alert('Thanh toán thất bại. Vui lòng thử lại.');
+        showToast('Thanh toán thất bại. Vui lòng thử lại.', 'error');
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Có lỗi xảy ra khi thanh toán');
+      showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi thanh toán', 'error');
     } finally {
       setBuyingNFT(null);
     }
@@ -373,20 +413,7 @@ const SessionTab: React.FC = () => {
       <div className="session-tab">
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Đang tải dữ liệu...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="session-tab">
-        <div className="error-container">
-          <p className="error-message">{error}</p>
-          <button className="retry-button" onClick={fetchSessionData}>
-            Thử lại
-          </button>
+          <p>Đang tải dữ liệu phiên...</p>
         </div>
       </div>
     );
@@ -436,7 +463,6 @@ const SessionTab: React.FC = () => {
                           {formatDate(session.session_date)}
                         </span>
                       </div>
-                    
                       
                       <div className="session-action">
                         {isRegistered ? (
@@ -505,12 +531,6 @@ const SessionTab: React.FC = () => {
                             disabled={buyingNFT === nft.id}
                           >
                             {buyingNFT === nft.id ? 'Đang mua...' : 'Mua'}
-                          </button>
-                          <button 
-                            className="add-to-cart-btn"
-                            onClick={() => handleAddToCart(nft)}
-                          >
-                            Thêm vào giỏ
                           </button>
                         </div>
                       </div>
@@ -650,12 +670,6 @@ const SessionTab: React.FC = () => {
                       >
                         {buyingNFT === nft.id ? 'Đang mua...' : 'Mua'}
                       </button>
-                      <button 
-                        className="add-to-cart-button"
-                        onClick={() => handleAddToCart(nft)}
-                      >
-                        Thêm vào giỏ
-                      </button>
                     </div>
                   </div>
                 ))}
@@ -679,6 +693,14 @@ const SessionTab: React.FC = () => {
           </div>
         </div>
       ) : null}
+
+      {/* Toast Notification */}
+      <Toast 
+        message={toast.message} 
+        type={toast.type} 
+        isVisible={toast.isVisible} 
+        onClose={hideToast} 
+      />
     </div>
   );
 };

@@ -12,7 +12,7 @@ const generateNFTHash = () => {
 
 class NFT {
   static async create(nftData) {
-    const { name, owner_id, price, type = 'sell' } = nftData;
+    const { name, owner_id, price, type = 'sell', payment_status = 'unpaid' } = nftData;
     
     // Generate unique NFT ID
     let nftId;
@@ -30,13 +30,13 @@ class NFT {
     }
     
     const query = `
-      INSERT INTO nfts (id, name, owner_id, price, type, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, 'available', NOW(), NOW())
+      INSERT INTO nfts (id, name, owner_id, price, type, status, payment_status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, 'available', ?, NOW(), NOW())
     `;
     
     try {
       const [result] = await pool.execute(query, [
-        nftId, name, owner_id, price, type
+        nftId, name, owner_id, price, type, payment_status
       ]);
       
       return {
@@ -46,6 +46,7 @@ class NFT {
         price,
         type,
         status: 'available',
+        payment_status,
         created_at: new Date(),
         updated_at: new Date()
       };
@@ -147,6 +148,21 @@ class NFT {
       return result.affectedRows > 0;
     } catch (error) {
       throw new Error(`Error updating NFT price: ${error.message}`);
+    }
+  }
+
+  static async updatePaymentStatus(nftId, paymentStatus) {
+    const query = `
+      UPDATE nfts 
+      SET payment_status = ?, updated_at = NOW() 
+      WHERE id = ?
+    `;
+    
+    try {
+      const [result] = await pool.execute(query, [paymentStatus, nftId]);
+      return result.affectedRows > 0;
+    } catch (error) {
+      throw new Error(`Error updating NFT payment status: ${error.message}`);
     }
   }
 

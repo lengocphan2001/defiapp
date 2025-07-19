@@ -6,6 +6,14 @@ class SessionController {
     try {
       const session = await Session.getTodaySession();
       
+      if (!session) {
+        return res.status(404).json({
+          success: false,
+          message: 'No session found for today. Please contact admin to create a session.',
+          data: null
+        });
+      }
+      
       res.json({
         success: true,
         data: {
@@ -44,6 +52,15 @@ class SessionController {
       });
     } catch (error) {
       console.error('Error registering for session:', error);
+      
+      // Provide specific error message for missing session
+      if (error.message.includes('No session found for today')) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không có phiên nào cho hôm nay. Vui lòng liên hệ admin để tạo phiên.'
+        });
+      }
+      
       res.status(400).json({
         success: false,
         message: error.message
@@ -63,7 +80,8 @@ class SessionController {
         success: true,
         data: {
           is_registered: isRegistered,
-          registration: registration
+          registration: registration,
+          has_session: registration !== null // Indicate if there's an active session
         }
       });
     } catch (error) {
@@ -80,9 +98,15 @@ class SessionController {
     try {
       const stats = await Session.getSessionStats();
       
+      // Check if there's an active session for today
+      const todaySession = await Session.getTodaySession();
+      
       res.json({
         success: true,
-        data: stats
+        data: {
+          ...stats,
+          has_today_session: todaySession !== null
+        }
       });
     } catch (error) {
       console.error('Error getting session stats:', error);
@@ -129,6 +153,15 @@ class SessionController {
       }
     } catch (error) {
       console.error('Error closing session:', error);
+      
+      // Provide specific error message for missing session
+      if (error.message.includes('No session found for today')) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không có phiên nào cho hôm nay để đóng.'
+        });
+      }
+      
       res.status(500).json({
         success: false,
         message: error.message
@@ -166,6 +199,15 @@ class SessionController {
       });
     } catch (error) {
       console.error('Error getting available NFTs:', error);
+      
+      // Provide specific error message for missing session
+      if (error.message.includes('No session found for today')) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không có phiên nào cho hôm nay. Vui lòng liên hệ admin để tạo phiên.'
+        });
+      }
+      
       res.status(500).json({
         success: false,
         message: error.message
@@ -273,6 +315,15 @@ class SessionController {
       }
     } catch (error) {
       console.error('Error buying NFT:', error);
+      
+      // Provide specific error message for missing session
+      if (error.message.includes('No session found for today')) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không có phiên nào cho hôm nay. Vui lòng liên hệ admin để tạo phiên.'
+        });
+      }
+      
       res.status(400).json({
         success: false,
         message: error.message
@@ -351,6 +402,15 @@ class SessionController {
       }
     } catch (error) {
       console.error('Error buying NFT without deduction:', error);
+      
+      // Provide specific error message for missing session
+      if (error.message.includes('No session found for today')) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không có phiên nào cho hôm nay. Vui lòng liên hệ admin để tạo phiên.'
+        });
+      }
+      
       res.status(400).json({
         success: false,
         message: error.message
@@ -786,6 +846,34 @@ class SessionController {
       });
     } catch (error) {
       console.error('Error registering for specific session:', error);
+      
+      // Provide specific error messages for common cases
+      if (error.message.includes('Insufficient balance')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Số dư không đủ để đăng ký phiên. Vui lòng nạp thêm tiền.',
+          error_type: 'insufficient_balance'
+        });
+      } else if (error.message.includes('already registered')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Bạn đã đăng ký phiên này rồi.',
+          error_type: 'already_registered'
+        });
+      } else if (error.message.includes('Session not found') || error.message.includes('not active')) {
+        return res.status(404).json({
+          success: false,
+          message: 'Phiên giao dịch không tồn tại hoặc đã đóng.',
+          error_type: 'session_not_found'
+        });
+      } else if (error.message.includes('User not found')) {
+        return res.status(404).json({
+          success: false,
+          message: 'Người dùng không tồn tại.',
+          error_type: 'user_not_found'
+        });
+      }
+      
       res.status(400).json({
         success: false,
         message: error.message

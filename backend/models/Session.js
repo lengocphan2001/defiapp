@@ -2,7 +2,7 @@ const mysql = require('mysql2/promise');
 const { pool } = require('../config/database');
 
 class Session {
-  // Get or create today's session
+  // Get today's session (no automatic creation)
   static async getTodaySession() {
     const today = new Date().toISOString().split('T')[0];
     
@@ -13,20 +13,8 @@ class Session {
         [today]
       );
       
-      if (rows.length === 0) {
-        // Create new session for today
-        const [result] = await pool.execute(
-          'INSERT INTO sessions (session_date, time_start, status, registration_fee) VALUES (?, "09:00:00", "active", 20000.00000000)',
-          [today]
-        );
-        
-        [rows] = await pool.execute(
-          'SELECT * FROM sessions WHERE id = ?',
-          [result.insertId]
-        );
-      }
-      
-      return rows[0];
+      // Return null if no session exists (no automatic creation)
+      return rows.length > 0 ? rows[0] : null;
     } catch (error) {
       throw new Error(`Error getting today's session: ${error.message}`);
     }
@@ -42,6 +30,10 @@ class Session {
       // Get today's session
       const session = await this.getTodaySession();
       
+      if (!session) {
+        throw new Error('No session found for today. Please create one in the admin panel.');
+      }
+
       // Check if user is already registered
       const [existingRegistrations] = await connection.execute(
         'SELECT * FROM session_registrations WHERE session_id = ? AND user_id = ? AND status = "registered"',
@@ -104,6 +96,10 @@ class Session {
     try {
       const session = await this.getTodaySession();
       
+      if (!session) {
+        return false; // No session found, so not registered
+      }
+
       const [rows] = await pool.execute(
         'SELECT * FROM session_registrations WHERE session_id = ? AND user_id = ? AND status = "registered"',
         [session.id, userId]
@@ -120,6 +116,10 @@ class Session {
     try {
       const session = await this.getTodaySession();
       
+      if (!session) {
+        return null; // No session found
+      }
+
       const [rows] = await pool.execute(
         'SELECT * FROM session_registrations WHERE session_id = ? AND user_id = ? AND status = "registered"',
         [session.id, userId]
@@ -136,6 +136,10 @@ class Session {
     try {
       const session = await this.getTodaySession();
       
+      if (!session) {
+        return []; // No session found
+      }
+
       const [rows] = await pool.execute(`
         SELECT sr.*, u.username, u.fullname 
         FROM session_registrations sr 
@@ -155,6 +159,16 @@ class Session {
     try {
       const session = await this.getTodaySession();
       
+      if (!session) {
+        return {
+          session_id: null,
+          session_date: null,
+          registration_count: 0,
+          total_fees: 0,
+          registration_fee: null
+        };
+      }
+
       const [registrationCount] = await pool.execute(
         'SELECT COUNT(*) as count FROM session_registrations WHERE session_id = ? AND status = "registered"',
         [session.id]
@@ -182,6 +196,10 @@ class Session {
     try {
       const session = await this.getTodaySession();
       
+      if (!session) {
+        throw new Error('No session found for today to close.');
+      }
+
       const [result] = await pool.execute(
         'UPDATE sessions SET status = "closed" WHERE id = ?',
         [session.id]

@@ -4,6 +4,7 @@ import nftService from '../../services/nftService';
 import { sessionService } from '../../services/sessionService';
 import { NFT } from '../../types';
 import { formatBalance, formatPrice } from '../../utils';
+import Toast from '../common/Toast';
 import './NFTTab.css';
 
 interface NFTTransaction {
@@ -12,6 +13,7 @@ interface NFTTransaction {
   nft_name: string;
   price: number;
   transaction_type: 'buy' | 'sell';
+  status?: 'pending' | 'completed';
   created_at: string;
 }
 
@@ -22,7 +24,33 @@ const NFTTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalSpending, setTotalSpending] = useState(0);
+  const [payingNFT, setPayingNFT] = useState<string | null>(null);
+  const [sellingNFT, setSellingNFT] = useState<string | null>(null);
+  const [openingNFT, setOpeningNFT] = useState<string | null>(null);
   const loadingRef = useRef(true);
+  
+  // Toast state
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'warning' | 'info';
+    isVisible: boolean;
+  }>({
+    message: '',
+    type: 'info',
+    isVisible: false
+  });
+
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setToast({
+      message,
+      type,
+      isVisible: true
+    });
+  };
+
+  const hideToast = () => {
+    setToast(prev => ({ ...prev, isVisible: false }));
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -44,7 +72,7 @@ const NFTTab: React.FC = () => {
         
       } catch (err) {
         console.error('Error in loadData:', err);
-        setError('Có lỗi xảy ra khi tải dữ liệu');
+        showToast('Có lỗi xảy ra khi tải dữ liệu', 'error');
       } finally {
         setLoading(false);
         loadingRef.current = false;
@@ -54,7 +82,7 @@ const NFTTab: React.FC = () => {
     // Add timeout to prevent infinite loading
     const timeout = setTimeout(() => {
       if (loadingRef.current) {
-        setError('Kết nối chậm. Vui lòng kiểm tra máy chủ backend có đang chạy không.');
+        showToast('Kết nối chậm. Vui lòng kiểm tra máy chủ backend có đang chạy không.', 'warning');
         setLoading(false);
         loadingRef.current = false;
       }
@@ -67,15 +95,13 @@ const NFTTab: React.FC = () => {
 
   const fetchMyNFTs = async () => {
     try {
-
-      
       const response = await nftService.getUserNFTs();
       
       if (response.success) {
         setMyNFTs(response.data);
       } else {
         console.error('NFT fetch failed');
-        setError('Không thể tải danh sách NFT của bạn');
+        showToast('Không thể tải danh sách NFT của bạn', 'error');
       }
     } catch (err) {
       console.error('Error fetching my NFTs:', err);
@@ -83,20 +109,20 @@ const NFTTab: React.FC = () => {
       // More specific error messages
       if (err instanceof Error) {
         if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-          setError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.');
+          showToast('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.', 'error');
         } else if (err.message.includes('401')) {
-          setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+          showToast('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
         } else if (err.message.includes('403')) {
-          setError('Bạn không có quyền truy cập.');
+          showToast('Bạn không có quyền truy cập.', 'error');
         } else if (err.message.includes('404')) {
-          setError('API không tìm thấy.');
+          showToast('API không tìm thấy.', 'error');
         } else if (err.message.includes('500')) {
-          setError('Lỗi máy chủ. Vui lòng thử lại sau.');
+          showToast('Lỗi máy chủ. Vui lòng thử lại sau.', 'error');
         } else {
-          setError('Có lỗi xảy ra: ' + err.message);
+          showToast('Có lỗi xảy ra: ' + err.message, 'error');
         }
       } else {
-        setError('Có lỗi xảy ra khi tải dữ liệu NFT');
+        showToast('Có lỗi xảy ra khi tải dữ liệu NFT', 'error');
       }
       throw err; // Re-throw to be caught by the main loadData function
     }
@@ -136,6 +162,7 @@ const NFTTab: React.FC = () => {
         await fetchTransactionHistory();
       } catch (err) {
         console.error('Retry failed:', err);
+        showToast('Thử lại thất bại', 'error');
       } finally {
         setLoading(false);
         loadingRef.current = false;
@@ -146,11 +173,117 @@ const NFTTab: React.FC = () => {
 
   const handlePayNFT = async (nftId: string, price: number) => {
     try {
-      // This would be for selling the NFT, but for now just show an alert
-      alert(`Thanh toán NFT ${nftId} - Chức năng đang được phát triển`);
+      setPayingNFT(nftId);
+      
+      // Check user balance first
+      const currentUser = user;
+      if (!currentUser || !currentUser.balance) {
+        showToast('Không thể kiểm tra số dư. Vui lòng đăng nhập lại.', 'error');
+        return;
+      }
+      
+      const userBalance = parseFloat(currentUser.balance.toString());
+      if (userBalance < price) {
+        showToast('Số dư không đủ để thanh toán. Vui lòng nạp thêm tiền.', 'warning');
+        return;
+      }
+
+      // Pay for specific NFT
+      const response = await nftService.payNFT(nftId, price);
+      
+      if (response.success) {
+        showToast('Thanh toán thành công! NFT đã được kích hoạt.', 'success');
+        // Refresh data to update NFT status and user balance
+        await fetchMyNFTs();
+        await fetchTransactionHistory();
+        // Refresh user data to update balance
+        window.location.reload();
+      } else {
+        showToast(response.message || 'Thanh toán thất bại', 'error');
+      }
     } catch (err) {
       console.error('Error paying NFT:', err);
+      showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi thanh toán', 'error');
+    } finally {
+      setPayingNFT(null);
     }
+  };
+
+  const handleSellNFT = async (nftId: string) => {
+    try {
+      setSellingNFT(nftId);
+      
+      // This would be the sell functionality
+      showToast('Chức năng bán NFT đang được phát triển', 'info');
+      
+    } catch (err) {
+      console.error('Error selling NFT:', err);
+      showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi bán NFT', 'error');
+    } finally {
+      setSellingNFT(null);
+    }
+  };
+
+  const handleOpenNFT = async (nftId: string) => {
+    try {
+      setOpeningNFT(nftId);
+      
+      // This would be the open functionality
+      showToast('Chức năng mở NFT đang được phát triển', 'info');
+      
+    } catch (err) {
+      console.error('Error opening NFT:', err);
+      showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi mở NFT', 'error');
+    } finally {
+      setOpeningNFT(null);
+    }
+  };
+
+  // Check if NFT needs payment (has pending transaction)
+  const needsPayment = (nft: NFT): boolean => {
+    console.log('Checking payment for NFT:', nft.id, 'Payment status:', nft.payment_status, 'Transactions:', transactions);
+    
+    // First check the NFT's payment_status field (most reliable)
+    if (nft.payment_status === 'completed') {
+      console.log('NFT does not need payment: payment_status is completed');
+      return false;
+    }
+    
+    if (nft.payment_status === 'pending' || nft.payment_status === 'unpaid') {
+      console.log('NFT needs payment: payment_status is', nft.payment_status);
+      return true;
+    }
+    
+    // Fallback: Check if there's a pending transaction for this NFT
+    const hasPendingTransaction = transactions.some(tx => 
+      tx.nft_id === nft.id && 
+      tx.transaction_type === 'buy' && 
+      tx.status === 'pending'
+    );
+    
+    // If there's a pending transaction, definitely needs payment
+    if (hasPendingTransaction) {
+      console.log('NFT needs payment: has pending transaction');
+      return true;
+    }
+    
+    // Check if there's any completed transaction for this NFT
+    const hasCompletedTransaction = transactions.some(tx => 
+      tx.nft_id === nft.id && 
+      tx.transaction_type === 'buy' && 
+      tx.status === 'completed'
+    );
+    
+    // If there's a completed transaction, it doesn't need payment
+    if (hasCompletedTransaction) {
+      console.log('NFT does not need payment: has completed transaction');
+      return false;
+    }
+    
+    // TEMPORARY FIX: If no clear indication, assume it needs payment
+    // This prevents showing "Bán" and "Mở" buttons when payment status is unclear
+    console.log('NFT needs payment: unclear status, assuming needs payment');
+    return true;
   };
 
   const getNFTColor = (index: number): string => {
@@ -198,19 +331,6 @@ const NFTTab: React.FC = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="nft-tab">
-        <div className="error-container">
-          <p className="error-message">{error}</p>
-          <button className="retry-button" onClick={handleRetry}>
-            Thử lại
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="nft-tab">
       {/* Header */}
@@ -229,29 +349,56 @@ const NFTTab: React.FC = () => {
           </div>
         ) : (
           <div className="nfts-grid">
-            {myNFTs.map((nft, index) => (
-              <div 
-                key={nft.id} 
-                className="nft-card"
-                style={{ backgroundColor: getNFTColor(index) }}
-              >
-                <div className="nft-header-card">
-                  <span className="nft-name">{nft.name}</span>
+            {myNFTs.map((nft, index) => {
+              const needsPaymentForThisNFT = needsPayment(nft);
+              
+              return (
+                <div 
+                  key={nft.id} 
+                  className="nft-card"
+                  style={{ backgroundColor: getNFTColor(index) }}
+                >
+                  <div className="nft-header-card">
+                    <span className="nft-name">{nft.name}</span>
+                  </div>
+                  <div className="nft-details">
+                    <div className="nft-id">ID: {nft.id}</div>
+                    <div className="nft-seller">Người bán: {nft.owner_name || 'Admin'}</div>
+                    <div className="nft-price">Giá: {formatPrice(nft.price)}</div>
+                  </div>
+                  <div className="nft-actions">
+                    {needsPaymentForThisNFT ? (
+                      // Show payment button if NFT needs payment
+                      <button 
+                        className="pay-button"
+                        onClick={() => handlePayNFT(nft.id, parseFloat(nft.price.toString()))}
+                        disabled={payingNFT === nft.id}
+                      >
+                        {payingNFT === nft.id ? 'Đang thanh toán...' : `Thanh toán ${formatPrice(nft.price)}`}
+                      </button>
+                    ) : (
+                      // Show sell and open buttons if NFT is paid
+                      <div className="nft-action-buttons">
+                        <button 
+                          className="sell-button"
+                          onClick={() => handleSellNFT(nft.id)}
+                          disabled={sellingNFT === nft.id}
+                        >
+                          {sellingNFT === nft.id ? 'Đang bán...' : 'Bán'}
+                        </button>
+                        <button 
+                          className="open-button"
+                          onClick={() => handleOpenNFT(nft.id)}
+                          disabled={openingNFT === nft.id}
+                        >
+                          {openingNFT === nft.id ? 'Đang mở...' : 'Mở'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="nft-details">
-                  <div className="nft-id">ID: {nft.id}</div>
-                  <div className="nft-seller">Người bán: {nft.owner_name || 'Admin'}</div>
-                </div>
-                <div className="nft-actions">
-                  <button 
-                    className="pay-button"
-                    onClick={() => handlePayNFT(nft.id, parseFloat(nft.price.toString()))}
-                  >
-                    Thanh toán {formatPrice(nft.price)}
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -284,11 +431,24 @@ const NFTTab: React.FC = () => {
                 <span className="history-price">
                   — {formatPrice(transaction.price)}
                 </span>
+                {transaction.status && (
+                  <span className={`history-status status-${transaction.status}`}>
+                    {transaction.status === 'pending' ? 'Chờ thanh toán' : 'Đã hoàn thành'}
+                  </span>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Toast Notification */}
+      <Toast 
+        message={toast.message} 
+        type={toast.type} 
+        isVisible={toast.isVisible} 
+        onClose={hideToast} 
+      />
     </div>
   );
 };
