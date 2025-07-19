@@ -128,7 +128,6 @@
 .nft-action-buttons {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
 .pay-button {
@@ -168,8 +167,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-  flex: 1;
-  min-width: 60px;
+  width: fit-content;
 }
 
 .sell-button:hover:not(:disabled) {
@@ -195,8 +193,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-  flex: 1;
-  min-width: 60px;
+  width: fit-content;
 }
 
 .open-button:hover:not(:disabled) {
