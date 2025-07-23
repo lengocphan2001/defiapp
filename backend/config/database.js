@@ -90,27 +90,7 @@ const initDatabase = async () => {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `;
 
-    // Create NFTs table
-    const createNFTsTable = `
-      CREATE TABLE IF NOT EXISTS nfts (
-        id VARCHAR(18) PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        owner_id INT NOT NULL,
-        price DECIMAL(20, 2) NOT NULL DEFAULT 0.00000000,
-        type ENUM('sell', 'buy') DEFAULT 'sell',
-        status ENUM('available', 'sold', 'cancelled') DEFAULT 'available',
-        payment_status ENUM('pending', 'completed', 'unpaid') DEFAULT 'unpaid',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
-        INDEX idx_owner_id (owner_id),
-        INDEX idx_type (type),
-        INDEX idx_status (status),
-        INDEX idx_payment_status (payment_status),
-        INDEX idx_price (price),
-        INDEX idx_created_at (created_at)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-    `;
+    
 
     // Create sessions table
     const createSessionsTable = `
@@ -147,6 +127,31 @@ const initDatabase = async () => {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `;
 
+    // Create NFTs table
+    const createNFTsTable = `
+      CREATE TABLE IF NOT EXISTS nfts (
+        id VARCHAR(18) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        owner_id INT NOT NULL,
+        price DECIMAL(20, 2) NOT NULL DEFAULT 0.00000000,
+        type ENUM('buy', 'sell', 'list', 'open') DEFAULT 'sell',
+        status ENUM('available', 'sold', 'cancelled') DEFAULT 'available',
+        payment_status ENUM('pending', 'completed', 'unpaid') DEFAULT 'unpaid',
+        session_id INT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE SET NULL,
+        INDEX idx_owner_id (owner_id),
+        INDEX idx_type (type),
+        INDEX idx_status (status),
+        INDEX idx_payment_status (payment_status),
+        INDEX idx_price (price),
+        INDEX idx_session_id (session_id),
+        INDEX idx_created_at (created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `;
+
     // Create nft_transactions table
     const createNFTTransactionsTable = `
       CREATE TABLE IF NOT EXISTS nft_transactions (
@@ -169,13 +174,52 @@ const initDatabase = async () => {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `;
 
+    // Create smp_transactions table for general SMP transactions
+    const createSMPTransactionsTable = `
+      CREATE TABLE IF NOT EXISTS smp_transactions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        from_user_id INT NULL,
+        to_user_id INT NULL,
+        amount DECIMAL(20, 8) NOT NULL,
+        transaction_type ENUM('deposit', 'withdrawal', 'transfer', 'nft_payment', 'nft_sale', 'commission', 'refund') NOT NULL,
+        description TEXT,
+        reference_id VARCHAR(50) NULL,
+        reference_type ENUM('nft_transaction', 'session_registration', 'deposit_request', 'withdrawal_request') NULL,
+        status ENUM('pending', 'completed', 'failed', 'cancelled') DEFAULT 'completed',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (from_user_id) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (to_user_id) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_from_user_id (from_user_id),
+        INDEX idx_to_user_id (to_user_id),
+        INDEX idx_transaction_type (transaction_type),
+        INDEX idx_reference_id (reference_id),
+        INDEX idx_status (status),
+        INDEX idx_created_at (created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `;
+
+    // Create daily_session_settings table
+    const createDailySessionSettingsTable = `
+      CREATE TABLE IF NOT EXISTS daily_session_settings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        time_start TIME NOT NULL DEFAULT '09:00:00',
+        registration_fee DECIMAL(20, 8) NOT NULL DEFAULT 20000.00000000,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_is_active (is_active)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `;
+
     await connection.execute(createUsersTable);
     await connection.execute(createReferralCodesTable);
     await connection.execute(createRequestsTable);
-    await connection.execute(createNFTsTable);
     await connection.execute(createSessionsTable);
+    await connection.execute(createNFTsTable);
     await connection.execute(createSessionRegistrationsTable);
     await connection.execute(createNFTTransactionsTable);
+    await connection.execute(createSMPTransactionsTable);
+    await connection.execute(createDailySessionSettingsTable);
     
     // Add status column to existing nft_transactions table if it doesn't exist
     try {
@@ -183,13 +227,20 @@ const initDatabase = async () => {
         ALTER TABLE nft_transactions 
         ADD COLUMN status ENUM('pending', 'completed', 'cancelled') DEFAULT 'completed' AFTER transaction_type
       `);
-      console.log('✅ Added status column to nft_transactions table');
     } catch (error) {
-      if (error.code === 'ER_DUP_FIELDNAME') {
-        console.log('ℹ️ Status column already exists in nft_transactions table');
-      } else {
-        console.log('ℹ️ Could not add status column (might already exist):', error.message);
-      }
+      // Column might already exist, ignore error
+      console.log('Status column might already exist in nft_transactions table');
+    }
+
+    // Update NFTs table type column to support new values
+    try {
+      await connection.execute(`
+        ALTER TABLE nfts 
+        MODIFY COLUMN type ENUM('buy', 'sell', 'list', 'open') DEFAULT 'sell'
+      `);
+    } catch (error) {
+      // Column might already be updated, ignore error
+      console.log('Type column might already be updated in nfts table');
     }
     
     // Add index for status column if it doesn't exist
@@ -260,6 +311,72 @@ const initDatabase = async () => {
       } else {
         console.log('ℹ️ Could not add payment_status index (might already exist):', error.message);
       }
+    }
+
+    // Add session_id column to existing nfts table if it doesn't exist
+    try {
+      await connection.execute(`
+        ALTER TABLE nfts 
+        ADD COLUMN session_id INT NULL AFTER payment_status
+      `);
+      console.log('✅ Added session_id column to nfts table');
+      
+      // Add foreign key constraint
+      try {
+        await connection.execute(`
+          ALTER TABLE nfts 
+          ADD CONSTRAINT fk_nfts_session_id 
+          FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE SET NULL
+        `);
+        console.log('✅ Added session_id foreign key to nfts table');
+      } catch (fkError) {
+        if (fkError.code === 'ER_DUP_KEYNAME') {
+          console.log('ℹ️ Session_id foreign key already exists in nfts table');
+        } else {
+          console.log('ℹ️ Could not add session_id foreign key (might already exist):', fkError.message);
+        }
+      }
+      
+      // Add index for session_id
+      try {
+        await connection.execute(`
+          ALTER TABLE nfts 
+          ADD INDEX idx_session_id (session_id)
+        `);
+        console.log('✅ Added session_id index to nfts table');
+      } catch (indexError) {
+        if (indexError.code === 'ER_DUP_KEYNAME') {
+          console.log('ℹ️ Session_id index already exists in nfts table');
+        } else {
+          console.log('ℹ️ Could not add session_id index (might already exist):', indexError.message);
+        }
+      }
+      
+    } catch (error) {
+      if (error.code === 'ER_DUP_FIELDNAME') {
+        console.log('ℹ️ Session_id column already exists in nfts table');
+      } else {
+        console.log('ℹ️ Could not add session_id column (might already exist):', error.message);
+      }
+    }
+    
+    // Insert default daily session settings if none exist
+    try {
+      const [existingSettings] = await connection.execute(
+        'SELECT COUNT(*) as count FROM daily_session_settings'
+      );
+      
+      if (existingSettings[0].count === 0) {
+        await connection.execute(`
+          INSERT INTO daily_session_settings (time_start, registration_fee, is_active) 
+          VALUES ('09:00:00', 20000.00000000, TRUE)
+        `);
+        console.log('✅ Inserted default daily session settings');
+      } else {
+        console.log('ℹ️ Daily session settings already exist');
+      }
+    } catch (error) {
+      console.log('ℹ️ Could not insert default daily session settings:', error.message);
     }
     
     console.log('✅ Database tables initialized successfully!');

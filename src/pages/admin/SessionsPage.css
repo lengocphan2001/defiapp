@@ -64,13 +64,15 @@
   transform: translateY(1px);
 }
 
-.create-btn {
+
+
+.settings-btn {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: #10b981;
-  border: 1px solid #059669;
+  background: #8b5cf6;
+  border: 1px solid #7c3aed;
   border-radius: 8px;
   color: white;
   font-size: 14px;
@@ -79,12 +81,36 @@
   transition: all 0.2s ease;
 }
 
-.create-btn:hover {
-  background: #059669;
-  border-color: #047857;
+.settings-btn:hover {
+  background: #7c3aed;
+  border-color: #6d28d9;
 }
 
-.create-btn:active {
+.settings-btn:active {
+  transform: translateY(1px);
+}
+
+.upcoming-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #f59e0b;
+  border: 1px solid #d97706;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upcoming-btn:hover {
+  background: #d97706;
+  border-color: #b45309;
+}
+
+.upcoming-btn:active {
   transform: translateY(1px);
 }
 
@@ -485,6 +511,85 @@
 
 .users-table tr:hover {
   background: #f9fafb;
+}
+
+/* Info Box Styles */
+.info-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.info-box p {
+  margin: 0;
+  color: #1e40af;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Upcoming Sessions Styles */
+.upcoming-sessions-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.upcoming-session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.upcoming-session-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.upcoming-session-item:last-child {
+  margin-bottom: 0;
+}
+
+.session-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.session-info > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.no-sessions {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.no-sessions p {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+/* Checkbox Styles */
+.form-group input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
 }
 
 /* Responsive Design */

@@ -2,7 +2,7 @@ const mysql = require('mysql2/promise');
 const { pool } = require('../config/database');
 
 class Session {
-  // Get today's session (no automatic creation)
+  // Get today's session (no automatic creation - sessions are created by scheduler)
   static async getTodaySession() {
     const today = new Date().toISOString().split('T')[0];
     
@@ -13,7 +13,7 @@ class Session {
         [today]
       );
       
-      // Return null if no session exists (no automatic creation)
+      // Return session if exists, null if not (scheduler handles creation)
       return rows.length > 0 ? rows[0] : null;
     } catch (error) {
       throw new Error(`Error getting today's session: ${error.message}`);
@@ -490,6 +490,178 @@ class Session {
       };
     } catch (error) {
       throw new Error(`Error getting sessions with pagination: ${error.message}`);
+    }
+  }
+
+  // Get daily session settings (admin only)
+  static async getDailySessionSettings() {
+    try {
+      const [rows] = await pool.execute(
+        'SELECT * FROM daily_session_settings ORDER BY id DESC LIMIT 1'
+      );
+      
+      return rows[0] || null;
+    } catch (error) {
+      throw new Error(`Error getting daily session settings: ${error.message}`);
+    }
+  }
+
+  // Update daily session settings (admin only)
+  static async updateDailySessionSettings(settingsData) {
+    try {
+      const { time_start, registration_fee, is_active } = settingsData;
+      
+      // Check if settings exist
+      const [existingSettings] = await pool.execute(
+        'SELECT * FROM daily_session_settings ORDER BY id DESC LIMIT 1'
+      );
+      
+      if (existingSettings.length > 0) {
+        // Update existing settings
+        const [result] = await pool.execute(
+          'UPDATE daily_session_settings SET time_start = ?, registration_fee = ?, is_active = ? WHERE id = ?',
+          [time_start, registration_fee, is_active, existingSettings[0].id]
+        );
+        
+        // If automatic creation is enabled, ensure next 4 days of sessions exist
+        if (is_active) {
+          await this.ensureNextDaysSessions(4, { time_start, registration_fee });
+        }
+        
+        return result.affectedRows > 0;
+      } else {
+        // Create new settings
+        const [result] = await pool.execute(
+          'INSERT INTO daily_session_settings (time_start, registration_fee, is_active) VALUES (?, ?, ?)',
+          [time_start, registration_fee, is_active]
+        );
+        
+        // If automatic creation is enabled, ensure next 4 days of sessions exist
+        if (is_active) {
+          await this.ensureNextDaysSessions(4, { time_start, registration_fee });
+        }
+        
+        return result.insertId > 0;
+      }
+    } catch (error) {
+      throw new Error(`Error updating daily session settings: ${error.message}`);
+    }
+  }
+
+  // Create session for specific date (admin only)
+  static async createSessionForDate(sessionData) {
+    try {
+      const { session_date, time_start, registration_fee } = sessionData;
+      
+      // Check if session for this date already exists
+      const [existingSessions] = await pool.execute(
+        'SELECT * FROM sessions WHERE session_date = ?',
+        [session_date]
+      );
+      
+      if (existingSessions.length > 0) {
+        throw new Error('Session for this date already exists');
+      }
+      
+      const [result] = await pool.execute(
+        'INSERT INTO sessions (session_date, time_start, status, registration_fee) VALUES (?, ?, "active", ?)',
+        [session_date, time_start, registration_fee]
+      );
+      
+      return result.insertId;
+    } catch (error) {
+      throw new Error(`Error creating session for date: ${error.message}`);
+    }
+  }
+
+  // Create sessions for next N days
+  static async createNextDaysSessions(daysCount, settings) {
+    try {
+      const today = new Date();
+      
+      for (let i = 0; i < daysCount; i++) {
+        const sessionDate = new Date(today);
+        sessionDate.setDate(today.getDate() + i);
+        const dateString = sessionDate.toISOString().split('T')[0];
+        
+        // Check if session for this date already exists
+        const [existingSessions] = await pool.execute(
+          'SELECT * FROM sessions WHERE session_date = ?',
+          [dateString]
+        );
+        
+        if (existingSessions.length === 0) {
+          // Create session for this date
+          await pool.execute(
+            'INSERT INTO sessions (session_date, time_start, status, registration_fee) VALUES (?, ?, "active", ?)',
+            [dateString, settings.time_start, settings.registration_fee]
+          );
+        }
+      }
+    } catch (error) {
+      throw new Error(`Error creating next days sessions: ${error.message}`);
+    }
+  }
+
+  // Ensure next N days of sessions exist (update existing ones if needed)
+  static async ensureNextDaysSessions(daysCount, settings) {
+    try {
+      const today = new Date();
+      
+      for (let i = 0; i < daysCount; i++) {
+        const sessionDate = new Date(today);
+        sessionDate.setDate(today.getDate() + i);
+        const dateString = sessionDate.toISOString().split('T')[0];
+        
+        // Check if session for this date already exists
+        const [existingSessions] = await pool.execute(
+          'SELECT * FROM sessions WHERE session_date = ?',
+          [dateString]
+        );
+        
+        if (existingSessions.length === 0) {
+          // Create session for this date
+          await pool.execute(
+            'INSERT INTO sessions (session_date, time_start, status, registration_fee) VALUES (?, ?, "active", ?)',
+            [dateString, settings.time_start, settings.registration_fee]
+          );
+        } else {
+          // Update existing session with new settings if needed
+          const existingSession = existingSessions[0];
+          if (existingSession.time_start !== settings.time_start || 
+              existingSession.registration_fee !== settings.registration_fee) {
+            await pool.execute(
+              'UPDATE sessions SET time_start = ?, registration_fee = ? WHERE id = ?',
+              [settings.time_start, settings.registration_fee, existingSession.id]
+            );
+          }
+        }
+      }
+    } catch (error) {
+      throw new Error(`Error ensuring next days sessions: ${error.message}`);
+    }
+  }
+
+  // Get upcoming sessions (next 7 days)
+  static async getUpcomingSessions() {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const [rows] = await pool.execute(`
+        SELECT s.*, 
+               COALESCE(COUNT(sr.id), 0) as registration_count,
+               COALESCE(SUM(sr.registration_fee), 0) as total_fees
+        FROM sessions s
+        LEFT JOIN session_registrations sr ON s.id = sr.session_id AND sr.status = 'registered'
+        WHERE s.session_date >= ? AND s.status = 'active'
+        GROUP BY s.id, s.session_date, s.time_start, s.status, s.registration_fee, s.created_at, s.updated_at
+        ORDER BY s.session_date ASC, s.time_start ASC
+        LIMIT 7
+      `, [today]);
+      
+      return rows;
+    } catch (error) {
+      throw new Error(`Error getting upcoming sessions: ${error.message}`);
     }
   }
 }

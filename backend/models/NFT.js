@@ -12,7 +12,7 @@ const generateNFTHash = () => {
 
 class NFT {
   static async create(nftData) {
-    const { name, owner_id, price, type = 'sell', payment_status = 'unpaid' } = nftData;
+    const { name, owner_id, price, type = 'sell', payment_status = 'unpaid', session_id = null } = nftData;
     
     // Generate unique NFT ID
     let nftId;
@@ -30,13 +30,13 @@ class NFT {
     }
     
     const query = `
-      INSERT INTO nfts (id, name, owner_id, price, type, status, payment_status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, 'available', ?, NOW(), NOW())
+      INSERT INTO nfts (id, name, owner_id, price, type, status, payment_status, session_id, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, 'available', ?, ?, NOW(), NOW())
     `;
     
     try {
       const [result] = await pool.execute(query, [
-        nftId, name, owner_id, price, type, payment_status
+        nftId, name, owner_id, price, type, payment_status, session_id
       ]);
       
       return {
@@ -47,6 +47,7 @@ class NFT {
         type,
         status: 'available',
         payment_status,
+        session_id,
         created_at: new Date(),
         updated_at: new Date()
       };

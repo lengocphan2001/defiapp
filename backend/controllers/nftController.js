@@ -30,11 +30,23 @@ const nftController = {
         });
       }
 
+      // Get today's session
+      const Session = require('../models/Session');
+      const todaySession = await Session.getTodaySession();
+      
+      if (!todaySession) {
+        return res.status(400).json({
+          success: false,
+          message: 'Không có phiên giao dịch nào cho hôm nay. Vui lòng liên hệ admin để tạo phiên.'
+        });
+      }
+
       const nftData = {
         name: name.trim(),
         owner_id,
         price: parseFloat(price),
-        type
+        type,
+        session_id: todaySession.id
       };
 
       const newNFT = await NFT.create(nftData);
@@ -145,6 +157,43 @@ const nftController = {
 
     } catch (error) {
       console.error('Error fetching user NFTs:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error.message
+      });
+    }
+  },
+
+  // Get user's selling NFTs (NFTs listed for sale)
+  async getUserSellingNFTs(req, res) {
+    try {
+      const userId = req.user.id;
+      
+      const connection = await require('../config/database').pool.getConnection();
+      
+      try {
+        const [nfts] = await connection.execute(`
+          SELECT n.*, u.username as owner_name 
+          FROM nfts n 
+          JOIN users u ON n.owner_id = u.id 
+          WHERE n.owner_id = ? 
+            AND n.type = 'sell' 
+            AND n.status = 'available'
+          ORDER BY n.created_at DESC
+        `, [userId]);
+
+        res.json({
+          success: true,
+          data: nfts
+        });
+
+      } finally {
+        connection.release();
+      }
+
+    } catch (error) {
+      console.error('Error fetching user selling NFTs:', error);
       res.status(500).json({
         success: false,
         message: 'Internal server error',
@@ -354,6 +403,23 @@ const nftController = {
           ['completed', id]
         );
 
+        // Create SMP transaction record directly in the same transaction
+        await connection.execute(`
+          INSERT INTO smp_transactions (
+            from_user_id, to_user_id, amount, transaction_type, 
+            description, reference_id, reference_type, status, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        `, [
+          userId,
+          transaction.seller_id,
+          transactionPrice,
+          'nft_payment',
+          `Payment for NFT ${id}`,
+          transaction.id.toString(),
+          'nft_transaction',
+          'completed'
+        ]);
+
         await connection.commit();
 
         res.json({
@@ -375,6 +441,198 @@ const nftController = {
 
     } catch (error) {
       console.error('Error paying NFT:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    }
+  },
+
+  // Sell NFT (set for next day session)
+  async sellNFT(req, res) {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+
+      const connection = await require('../config/database').pool.getConnection();
+      
+      try {
+        await connection.beginTransaction();
+
+        // Check if NFT exists and belongs to user
+        const [nftRows] = await connection.execute(
+          'SELECT * FROM nfts WHERE id = ?',
+          [id]
+        );
+
+        if (nftRows.length === 0) {
+          throw new Error('NFT không tồn tại');
+        }
+
+        const nft = nftRows[0];
+
+        // Check if user owns this NFT
+        if (nft.owner_id !== userId) {
+          throw new Error('Bạn không sở hữu NFT này');
+        }
+
+        // Check if NFT is paid
+        if (nft.payment_status !== 'completed') {
+          throw new Error('NFT chưa được thanh toán. Vui lòng thanh toán trước khi bán.');
+        }
+
+        // Get next day's session
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowDate = tomorrow.toISOString().split('T')[0];
+
+        const [sessionRows] = await connection.execute(
+          'SELECT * FROM sessions WHERE session_date = ?',
+          [tomorrowDate]
+        );
+
+        if (sessionRows.length === 0) {
+          throw new Error('Không có phiên giao dịch cho ngày mai. Vui lòng liên hệ admin.');
+        }
+
+        const nextDaySession = sessionRows[0];
+
+        // Update NFT to be available for next day session
+        await connection.execute(
+          'UPDATE nfts SET session_id = ?, type = "sell", status = "available", updated_at = NOW() WHERE id = ?',
+          [nextDaySession.id, id]
+        );
+
+        // Create SMP transaction for listing NFT for sale
+        await connection.execute(`
+          INSERT INTO smp_transactions (
+            from_user_id, to_user_id, amount, transaction_type, 
+            description, reference_id, reference_type, status, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        `, [
+          userId,
+          null, // No recipient for listing
+          0, // No amount for listing
+          'nft_sale',
+          `Listed NFT ${id} for next day session`,
+          id,
+          'nft_transaction',
+          'completed'
+        ]);
+
+        await connection.commit();
+
+        res.json({
+          success: true,
+          message: 'NFT đã được đăng bán cho phiên giao dịch ngày mai!',
+          data: {
+            nft_id: id,
+            next_session_date: tomorrowDate
+          }
+        });
+
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+
+    } catch (error) {
+      console.error('Error selling NFT:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    }
+  },
+
+  // Open NFT (refund 90% and cancel)
+  async openNFT(req, res) {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+
+      const connection = await require('../config/database').pool.getConnection();
+      
+      try {
+        await connection.beginTransaction();
+
+        // Check if NFT exists and belongs to user
+        const [nftRows] = await connection.execute(
+          'SELECT * FROM nfts WHERE id = ?',
+          [id]
+        );
+
+        if (nftRows.length === 0) {
+          throw new Error('NFT không tồn tại');
+        }
+
+        const nft = nftRows[0];
+
+        // Check if user owns this NFT
+        if (nft.owner_id !== userId) {
+          throw new Error('Bạn không sở hữu NFT này');
+        }
+
+        // Check if NFT is paid
+        if (nft.payment_status !== 'completed') {
+          throw new Error('NFT chưa được thanh toán. Vui lòng thanh toán trước khi mở.');
+        }
+
+        // Calculate refund amount (90% of original price)
+        const refundAmount = parseFloat(nft.price) * 0.9;
+
+        // Add refund to user's balance
+        await connection.execute(
+          'UPDATE users SET balance = balance + ? WHERE id = ?',
+          [refundAmount, userId]
+        );
+
+        // Update NFT status to cancelled
+        await connection.execute(
+          'UPDATE nfts SET type = "open", status = "cancelled", updated_at = NOW() WHERE id = ?',
+          [id]
+        );
+
+        // Create SMP transaction for refund
+        await connection.execute(`
+          INSERT INTO smp_transactions (
+            from_user_id, to_user_id, amount, transaction_type, 
+            description, reference_id, reference_type, status, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        `, [
+          null, // System refund
+          userId,
+          refundAmount,
+          'refund',
+          `Refund 90% for opening NFT ${id}`,
+          id,
+          'nft_transaction',
+          'completed'
+        ]);
+
+        await connection.commit();
+
+        res.json({
+          success: true,
+          message: `Đã mở NFT và hoàn tiền ${refundAmount.toFixed(2)} SMP (90% giá trị)!`,
+          data: {
+            nft_id: id,
+            refund_amount: refundAmount,
+            original_price: nft.price
+          }
+        });
+
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+
+    } catch (error) {
+      console.error('Error opening NFT:', error);
       res.status(400).json({
         success: false,
         message: error.message

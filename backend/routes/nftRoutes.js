@@ -18,6 +18,9 @@ router.get('/admin/all', nftController.getAllNFTs);
 // Get user's NFTs (must come before /:id route)
 router.get('/user/my', nftController.getUserNFTs);
 
+// Get user's selling NFTs (NFTs listed for sale)
+router.get('/user/selling', nftController.getUserSellingNFTs);
+
 // Get NFT by ID
 router.get('/:id', nftController.getNFTById);
 
@@ -29,6 +32,12 @@ router.patch('/:id/status', nftController.updateNFTStatus);
 
 // Pay for specific NFT
 router.post('/:id/pay', nftController.payNFT);
+
+// Sell NFT (set for next day session)
+router.post('/:id/sell', nftController.sellNFT);
+
+// Open NFT (refund 90% and cancel)
+router.post('/:id/open', nftController.openNFT);
 
 // Delete NFT
 router.delete('/:id', nftController.deleteNFT);

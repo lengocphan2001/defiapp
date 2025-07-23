@@ -88,9 +88,10 @@ export interface NFT {
   owner_id: number;
   owner_name: string;
   price: string;
-  type: 'sell' | 'buy';
+  type: 'buy' | 'sell';
   status: 'available' | 'sold' | 'cancelled';
   payment_status?: 'pending' | 'completed' | 'unpaid';
+  session_id: number;
   created_at: string;
   updated_at: string;
 }

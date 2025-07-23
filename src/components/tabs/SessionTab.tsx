@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { sessionService, Session, SessionRegistration } from '../../services/sessionService';
+import nftService from '../../services/nftService';
 import { NFT } from '../../types';
 import { formatBalance, formatPrice, formatRegistrationFee } from '../../utils';
 import Toast from '../common/Toast';
@@ -24,6 +25,8 @@ const SessionTab: React.FC = () => {
   const [buyingNFT, setBuyingNFT] = useState<string | null>(null);
   const [cart, setCart] = useState<NFT[]>([]);
   const [showCart, setShowCart] = useState(false);
+  const [sellingNFTs, setSellingNFTs] = useState<NFT[]>([]);
+  const [sellingNFTsLoading, setSellingNFTsLoading] = useState(false);
   
   // Toast state
   const [toast, setToast] = useState<{
@@ -94,6 +97,7 @@ const SessionTab: React.FC = () => {
         // If registered, fetch available NFTs
         if (registrationResponse.data.is_registered) {
           await fetchAvailableNFTs();
+          await fetchSellingNFTs();
         }
       }
       
@@ -162,6 +166,23 @@ const SessionTab: React.FC = () => {
       }
       
       showToast(errorMessage, 'error');
+    }
+  };
+
+  const fetchSellingNFTs = async () => {
+    try {
+      setSellingNFTsLoading(true);
+      const response = await nftService.getUserSellingNFTs();
+      
+      if (response.success) {
+        setSellingNFTs(response.data);
+      } else {
+        showToast('Không thể tải danh sách NFT đang bán', 'error');
+      }
+    } catch (err) {
+      showToast('Có lỗi xảy ra khi tải danh sách NFT đang bán', 'error');
+    } finally {
+      setSellingNFTsLoading(false);
     }
   };
 
@@ -625,20 +646,6 @@ const SessionTab: React.FC = () => {
       {/* Show NFTs only if registered and session is active */}
       {isRegistered && sessionInfo?.status === 'active' ? (
         <>
-          {/* Filters */}
-          <div className="session-filters">
-            {filters.map(filter => (
-              <button
-                key={filter.id}
-                className={`filter-btn ${activeFilter === filter.id ? 'active' : ''}`}
-                onClick={() => setActiveFilter(filter.id)}
-              >
-                {filter.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Products Section */}
           <div className="products-section">
             <h2 className="products-title">Sản phẩm hôm nay</h2>
             
@@ -679,10 +686,8 @@ const SessionTab: React.FC = () => {
         </>
       ) : !isRegistered && sessionInfo?.status === 'active' ? (
         <div className="registration-required">
-          <div className="registration-card">
-            <h3>Đăng ký tham gia phiên</h3>
-            <p>Bạn cần đăng ký phiên để xem và mua NFT khả dụng</p>
-            <p>Phí đăng ký: {sessionInfo ? formatRegistrationFee(sessionInfo.registration_fee) : '20,000 SMP'}</p>
+          <div>
+            
           </div>
         </div>
       ) : sessionInfo?.status === 'closed' ? (
@@ -693,6 +698,44 @@ const SessionTab: React.FC = () => {
           </div>
         </div>
       ) : null}
+
+      {/* Listed Products Section */}
+      <div className="products-section">
+        <h2 className="products-title">Sản phẩm đăng bán</h2>
+        
+        {sellingNFTsLoading ? (
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>Đang tải...</p>
+          </div>
+        ) : sellingNFTs.length === 0 ? (
+          <div className="no-products">
+            <p>Bạn chưa có sản phẩm nào đang bán</p>
+          </div>
+        ) : (
+          <div className="products-grid">
+            {sellingNFTs.map((nft, index) => (
+              <div 
+                key={nft.id} 
+                className="product-card"
+                style={{ backgroundColor: getNFTColor(index) }}
+              >
+                <div className="product-header">
+                  <span className="product-id">ID: {nft.id}</span>
+                </div>
+                <div className="product-details">
+                  <div className="product-name">{nft.name}</div>
+                  <div className="product-owner">Chủ sở hữu: {nft.owner_name}</div>
+                  <div className="product-price">Giá: {formatPrice(nft.price)}</div>
+                </div>
+                <div className="product-actions">
+                  <span className="listed-badge">Đang bán</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Toast Notification */}
       <Toast 

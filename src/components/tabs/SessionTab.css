@@ -1141,3 +1141,14 @@
   color: #64748b;
   line-height: 1.5;
 } 
+
+.listed-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+} 

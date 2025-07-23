@@ -28,6 +28,7 @@ const NFTTab: React.FC = () => {
   const [sellingNFT, setSellingNFT] = useState<string | null>(null);
   const [openingNFT, setOpeningNFT] = useState<string | null>(null);
   const loadingRef = useRef(true);
+  const [todaySessionId, setTodaySessionId] = useState<number | null>(null);
   
   // Toast state
   const [toast, setToast] = useState<{
@@ -91,6 +92,16 @@ const NFTTab: React.FC = () => {
     loadData();
 
     return () => clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
+    const fetchSession = async () => {
+      try {
+        const res = await sessionService.getTodaySession();
+        if (res.success && res.data) setTodaySessionId(res.data.id);
+      } catch {}
+    };
+    fetchSession();
   }, []);
 
   const fetchMyNFTs = async () => {
@@ -213,9 +224,16 @@ const NFTTab: React.FC = () => {
     try {
       setSellingNFT(nftId);
       
-      // This would be the sell functionality
-      showToast('Chức năng bán NFT đang được phát triển', 'info');
+      const response = await nftService.sellNFT(nftId);
       
+      if (response.success) {
+        showToast(response.message, 'success');
+        // Refresh data to update NFT status
+        await fetchMyNFTs();
+        await fetchTransactionHistory();
+      } else {
+        showToast(response.message || 'Bán NFT thất bại', 'error');
+      }
     } catch (err) {
       console.error('Error selling NFT:', err);
       showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi bán NFT', 'error');
@@ -228,9 +246,18 @@ const NFTTab: React.FC = () => {
     try {
       setOpeningNFT(nftId);
       
-      // This would be the open functionality
-      showToast('Chức năng mở NFT đang được phát triển', 'info');
+      const response = await nftService.openNFT(nftId);
       
+      if (response.success) {
+        showToast(response.message, 'success');
+        // Refresh data to update NFT status and user balance
+        await fetchMyNFTs();
+        await fetchTransactionHistory();
+        // Refresh user data to update balance
+        window.location.reload();
+      } else {
+        showToast(response.message || 'Mở NFT thất bại', 'error');
+      }
     } catch (err) {
       console.error('Error opening NFT:', err);
       showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi mở NFT', 'error');
@@ -349,7 +376,9 @@ const NFTTab: React.FC = () => {
           </div>
         ) : (
           <div className="nfts-grid">
-            {myNFTs.map((nft, index) => {
+            {(todaySessionId ? myNFTs.filter(nft => nft.session_id === todaySessionId) : myNFTs)
+              .filter(nft => nft.type === 'buy') // Show only purchased NFTs
+              .map((nft, index) => {
               const needsPaymentForThisNFT = needsPayment(nft);
               
               return (

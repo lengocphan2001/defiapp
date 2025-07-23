@@ -184,14 +184,26 @@ class SessionController {
         });
       }
       
-      // Get available NFTs (not owned by current user)
+      // Get today's session
+      const todaySession = await Session.getTodaySession();
+      
+      if (!todaySession) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không có phiên nào cho hôm nay. Vui lòng liên hệ admin để tạo phiên.'
+        });
+      }
+      
+      // Get available NFTs for today's session only (not owned by current user)
       const [nfts] = await require('../config/database').pool.execute(`
         SELECT n.*, u.username as owner_name 
         FROM nfts n 
         JOIN users u ON n.owner_id = u.id 
-        WHERE n.owner_id != ? AND n.status = 'available'
+        WHERE n.owner_id != ? 
+          AND n.status = 'available' 
+          AND n.session_id = ?
         ORDER BY n.created_at DESC
-      `, [userId]);
+      `, [userId, todaySession.id]);
       
       res.json({
         success: true,
@@ -286,15 +298,32 @@ class SessionController {
         
         // Transfer NFT ownership
         await connection.execute(
-          'UPDATE nfts SET owner_id = ?, updated_at = NOW() WHERE id = ?',
+          'UPDATE nfts SET owner_id = ?, type = "buy", updated_at = NOW() WHERE id = ?',
           [userId, nftId]
         );
         
         // Create transaction history record
-        await connection.execute(`
+        const [transactionResult] = await connection.execute(`
           INSERT INTO nft_transactions (nft_id, buyer_id, seller_id, price, transaction_type, created_at)
           VALUES (?, ?, ?, ?, 'buy', NOW())
         `, [nftId, userId, nft.owner_id, nftPrice]);
+        
+        // Create SMP transaction record directly in the same transaction
+        await connection.execute(`
+          INSERT INTO smp_transactions (
+            from_user_id, to_user_id, amount, transaction_type, 
+            description, reference_id, reference_type, status, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        `, [
+          userId,
+          nft.owner_id,
+          nftPrice,
+          'nft_payment',
+          `Payment for NFT ${nftId}`,
+          transactionResult.insertId.toString(),
+          'nft_transaction',
+          'completed'
+        ]);
         
         await connection.commit();
         
@@ -373,7 +402,7 @@ class SessionController {
         
         // Transfer NFT ownership without deducting balance
         await connection.execute(
-          'UPDATE nfts SET owner_id = ?, updated_at = NOW() WHERE id = ?',
+          'UPDATE nfts SET owner_id = ?, type = "buy", updated_at = NOW() WHERE id = ?',
           [userId, nftId]
         );
         
@@ -487,6 +516,23 @@ class SessionController {
             'UPDATE nft_transactions SET status = ? WHERE id = ?',
             ['completed', transaction.id]
           );
+          
+          // Create SMP transaction record directly in the same transaction
+          await connection.execute(`
+            INSERT INTO smp_transactions (
+              from_user_id, to_user_id, amount, transaction_type, 
+              description, reference_id, reference_type, status, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+          `, [
+            userId,
+            transaction.seller_id,
+            price,
+            'nft_payment',
+            `Payment for NFT ${transaction.nft_id}`,
+            transaction.id.toString(),
+            'nft_transaction',
+            'completed'
+          ]);
         }
         
         await connection.commit();
@@ -917,6 +963,176 @@ class SessionController {
       });
     } catch (error) {
       console.error('Error checking user registration for session:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // Get daily session settings (admin only)
+  static async getDailySessionSettings(req, res) {
+    try {
+      const settings = await Session.getDailySessionSettings();
+      
+      res.json({
+        success: true,
+        data: settings
+      });
+    } catch (error) {
+      console.error('Error getting daily session settings:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // Update daily session settings (admin only)
+  static async updateDailySessionSettings(req, res) {
+    try {
+      const { time_start, registration_fee, is_active } = req.body;
+      
+      // Validation
+      if (!time_start) {
+        return res.status(400).json({
+          success: false,
+          message: 'Time start is required'
+        });
+      }
+      
+      if (!registration_fee || isNaN(registration_fee)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Valid registration fee is required'
+        });
+      }
+      
+      const success = await Session.updateDailySessionSettings({
+        time_start,
+        registration_fee,
+        is_active: is_active !== undefined ? is_active : true
+      });
+      
+      if (success) {
+        const updatedSettings = await Session.getDailySessionSettings();
+        res.json({
+          success: true,
+          message: 'Daily session settings updated successfully',
+          data: updatedSettings
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: 'Failed to update daily session settings'
+        });
+      }
+    } catch (error) {
+      console.error('Error updating daily session settings:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // Get upcoming sessions (admin only)
+  static async getUpcomingSessions(req, res) {
+    try {
+      const sessions = await Session.getUpcomingSessions();
+      
+      res.json({
+        success: true,
+        data: sessions
+      });
+    } catch (error) {
+      console.error('Error getting upcoming sessions:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // Create session for specific date (admin only)
+  static async createSessionForDate(req, res) {
+    try {
+      const { session_date, time_start, registration_fee } = req.body;
+      
+      // Validation
+      if (!session_date) {
+        return res.status(400).json({
+          success: false,
+          message: 'Session date is required'
+        });
+      }
+      
+      const sessionId = await Session.createSessionForDate({
+        session_date,
+        time_start,
+        registration_fee
+      });
+      
+      const newSession = await Session.getSessionById(sessionId);
+      
+      res.status(201).json({
+        success: true,
+        message: 'Session created successfully for specified date',
+        data: newSession
+      });
+    } catch (error) {
+      console.error('Error creating session for date:', error);
+      
+      if (error.message.includes('already exists')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Session for this date already exists'
+        });
+      }
+      
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // Create next 4 days sessions (admin only)
+  static async createNextDaysSessions(req, res) {
+    try {
+      const settings = await Session.getDailySessionSettings();
+      
+      if (!settings) {
+        return res.status(400).json({
+          success: false,
+          message: 'Daily session settings not found. Please configure daily settings first.'
+        });
+      }
+      
+      if (!settings.is_active) {
+        return res.status(400).json({
+          success: false,
+          message: 'Automatic session creation is disabled. Please enable it in daily settings.'
+        });
+      }
+      
+      await Session.ensureNextDaysSessions(4, {
+        time_start: settings.time_start,
+        registration_fee: settings.registration_fee
+      });
+      
+      const upcomingSessions = await Session.getUpcomingSessions();
+      
+      res.json({
+        success: true,
+        message: 'Successfully created/updated sessions for next 4 days',
+        data: {
+          created_count: upcomingSessions.length,
+          sessions: upcomingSessions
+        }
+      });
+    } catch (error) {
+      console.error('Error creating next days sessions:', error);
       res.status(500).json({
         success: false,
         message: error.message

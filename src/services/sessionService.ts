@@ -34,6 +34,15 @@ export interface SessionStats {
   registration_fee: number;
 }
 
+export interface DailySessionSettings {
+  id: number;
+  time_start: string;
+  registration_fee: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export const sessionService = {
   // Get today's session
   getTodaySession: async (): Promise<{ success: boolean; data: Session | null; message?: string }> => {
@@ -170,6 +179,36 @@ export const sessionService = {
   // Get sessions with pagination (admin only)
   getSessionsWithPagination: async (page: number = 1, limit: number = 10): Promise<any> => {
     const response = await apiService.get<any>(`/sessions/paginated?page=${page}&limit=${limit}`);
+    return response;
+  },
+
+  // Get daily session settings (admin only)
+  getDailySessionSettings: async (): Promise<{ success: boolean; data: DailySessionSettings | null }> => {
+    const response = await apiService.get<{ success: boolean; data: DailySessionSettings | null }>('/sessions/settings/daily');
+    return response;
+  },
+
+  // Update daily session settings (admin only)
+  updateDailySessionSettings: async (settings: { time_start: string; registration_fee: number; is_active?: boolean }): Promise<any> => {
+    const response = await apiService.put<any>('/sessions/settings/daily', settings);
+    return response;
+  },
+
+  // Get upcoming sessions (admin only)
+  getUpcomingSessions: async (): Promise<{ success: boolean; data: Session[] }> => {
+    const response = await apiService.get<{ success: boolean; data: Session[] }>('/sessions/upcoming');
+    return response;
+  },
+
+  // Create session for specific date (admin only)
+  createSessionForDate: async (sessionData: { session_date: string; time_start?: string; registration_fee?: number }): Promise<any> => {
+    const response = await apiService.post<any>('/sessions/create-for-date', sessionData);
+    return response;
+  },
+
+  // Create next 4 days sessions (admin only)
+  createNextDaysSessions: async (): Promise<any> => {
+    const response = await apiService.post<any>('/sessions/create-next-days', {});
     return response;
   }
 }; 

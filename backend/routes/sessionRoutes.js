@@ -29,6 +29,15 @@ router.get('/registered-users', adminMiddleware, SessionController.getRegistered
 router.post('/close', adminMiddleware, SessionController.closeSession);
 router.get('/all', adminMiddleware, SessionController.getAllSessions);
 router.get('/paginated', adminMiddleware, SessionController.getSessionsWithPagination);
+
+// Daily session settings routes (admin only) - must come before /:sessionId routes
+router.get('/settings/daily', adminMiddleware, SessionController.getDailySessionSettings);
+router.put('/settings/daily', adminMiddleware, SessionController.updateDailySessionSettings);
+router.get('/upcoming', adminMiddleware, SessionController.getUpcomingSessions);
+router.post('/create-for-date', adminMiddleware, SessionController.createSessionForDate);
+router.post('/create-next-days', adminMiddleware, SessionController.createNextDaysSessions);
+
+// Session-specific routes (must come after specific routes)
 router.get('/:sessionId', adminMiddleware, SessionController.getSessionById);
 router.post('/', adminMiddleware, SessionController.createSession);
 router.put('/:sessionId', adminMiddleware, SessionController.updateSession);

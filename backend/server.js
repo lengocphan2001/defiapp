@@ -5,11 +5,13 @@ const morgan = require('morgan');
 require('dotenv').config({ path: './config.env' });
 
 const { testConnection, initDatabase } = require('./config/database');
+const sessionScheduler = require('./utils/sessionScheduler');
 const authRoutes = require('./routes/auth');
 const requestRoutes = require('./routes/requestRoutes');
 const userRoutes = require('./routes/userRoutes');
 const nftRoutes = require('./routes/nftRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
+const smpTransactionRoutes = require('./routes/smpTransactionRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -65,6 +67,7 @@ app.use('/api/requests', requestRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/nfts', nftRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/smp-transactions', smpTransactionRoutes);
 
 // 404 handler - use a proper catch-all route
 app.use((req, res) => {
@@ -105,6 +108,9 @@ const startServer = async () => {
       console.log(`🎨 NFT API: http://localhost:${PORT}/api/nfts`);
       console.log(`📅 Session API: http://localhost:${PORT}/api/sessions`);
     });
+
+    // Start session scheduler
+    sessionScheduler.start();
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
@@ -126,11 +132,13 @@ process.on('uncaughtException', (err) => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('🛑 SIGTERM received, shutting down gracefully');
+  sessionScheduler.stop();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   console.log('🛑 SIGINT received, shutting down gracefully');
+  sessionScheduler.stop();
   process.exit(0);
 });
 

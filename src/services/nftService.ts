@@ -54,6 +54,16 @@ class NFTService {
     }
   }
 
+  // Get user's selling NFTs (NFTs listed for sale)
+  async getUserSellingNFTs(): Promise<{ success: boolean; data: NFT[] }> {
+    try {
+      const response = await apiService.get<{ success: boolean; data: NFT[] }>('/nfts/user/selling');
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   // Update NFT price
   async updateNFTPrice(id: string, price: number): Promise<{ success: boolean; message: string }> {
     try {
@@ -78,6 +88,26 @@ class NFTService {
   async payNFT(id: string, price: number): Promise<{ success: boolean; message: string; data: any }> {
     try {
       const response = await apiService.post<{ success: boolean; message: string; data: any }>(`/nfts/${id}/pay`, { price });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Sell NFT (set for next day session)
+  async sellNFT(id: string): Promise<{ success: boolean; message: string; data: any }> {
+    try {
+      const response = await apiService.post<{ success: boolean; message: string; data: any }>(`/nfts/${id}/sell`, {});
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Open NFT (refund 90% and cancel)
+  async openNFT(id: string): Promise<{ success: boolean; message: string; data: any }> {
+    try {
+      const response = await apiService.post<{ success: boolean; message: string; data: any }>(`/nfts/${id}/open`, {});
       return response;
     } catch (error) {
       throw this.handleError(error);
@@ -168,10 +198,14 @@ class NFTService {
   // Get type text
   getTypeText(type: string): string {
     switch (type) {
-      case 'sell':
-        return 'Bán';
       case 'buy':
-        return 'Mua';
+        return 'Đã mua';
+      case 'sell':
+        return 'Đang bán';
+      case 'list':
+        return 'Đã đăng';
+      case 'open':
+        return 'Đã mở';
       default:
         return 'Không xác định';
     }

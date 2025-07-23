@@ -10,12 +10,11 @@ import {
   Square,
   RefreshCw,
   AlertCircle,
-  Plus,
   Trash2,
   Save,
   X
 } from 'lucide-react';
-import { sessionService, Session, SessionRegistration } from '../../services/sessionService';
+import { sessionService, Session, SessionRegistration, DailySessionSettings } from '../../services/sessionService';
 import './SessionsPage.css';
 
 const SessionsPage: React.FC = () => {
@@ -26,14 +25,18 @@ const SessionsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [showUsersModal, setShowUsersModal] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState<Session | null>(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showUpcomingModal, setShowUpcomingModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalSessions, setTotalSessions] = useState(0);
+  const [dailySettings, setDailySettings] = useState<DailySessionSettings | null>(null);
+  const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([]);
 
   useEffect(() => {
     loadSessions();
+    loadDailySettings();
   }, []);
 
   const loadSessions = async (page: number = 1) => {
@@ -53,6 +56,45 @@ const SessionsPage: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Failed to load sessions');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDailySettings = async () => {
+    try {
+      const response = await sessionService.getDailySessionSettings();
+      if (response.success) {
+        setDailySettings(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to load daily settings:', err);
+    }
+  };
+
+  const loadUpcomingSessions = async () => {
+    try {
+      const response = await sessionService.getUpcomingSessions();
+      if (response.success) {
+        setUpcomingSessions(response.data);
+        setShowUpcomingModal(true);
+      } else {
+        setError('Failed to load upcoming sessions');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load upcoming sessions');
+    }
+  };
+
+  const handleUpdateDailySettings = async (settings: { time_start: string; registration_fee: number; is_active: boolean }) => {
+    try {
+      const response = await sessionService.updateDailySessionSettings(settings);
+      if (response.success) {
+        setShowSettingsModal(false);
+        await loadDailySettings();
+      } else {
+        setError(response.message || 'Failed to update daily settings');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update daily settings');
     }
   };
 
@@ -97,19 +139,7 @@ const SessionsPage: React.FC = () => {
     }
   };
 
-  const handleCreateSession = async (sessionData: { session_date: string; time_start: string; registration_fee: number }) => {
-    try {
-      const response = await sessionService.createSession(sessionData);
-      if (response.success) {
-        setShowCreateModal(false);
-        await loadSessions(currentPage);
-      } else {
-        setError(response.message || 'Failed to create session');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create session');
-    }
-  };
+
 
   const handleUpdateSession = async (sessionId: number, sessionData: any) => {
     try {
@@ -203,9 +233,13 @@ const SessionsPage: React.FC = () => {
           </div>
         </div>
         <div className="header-actions">
-          <button className="create-btn" onClick={() => setShowCreateModal(true)}>
-            <Plus size={20} />
-            Create Session
+          <button className="settings-btn" onClick={() => setShowSettingsModal(true)}>
+            <Clock size={20} />
+            Daily Settings
+          </button>
+          <button className="upcoming-btn" onClick={loadUpcomingSessions}>
+            <Calendar size={20} />
+            Upcoming Sessions
           </button>
           <button className="refresh-btn" onClick={() => loadSessions(currentPage)}>
             <RefreshCw size={20} />
@@ -440,79 +474,7 @@ const SessionsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Create Session Modal */}
-      {showCreateModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>Create New Session</h3>
-              <button 
-                className="close-btn"
-                onClick={() => setShowCreateModal(false)}
-              >
-                ×
-              </button>
-            </div>
-            
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Session Date:</label>
-                <input
-                  type="date"
-                  id="new-session-date"
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Start Time:</label>
-                <input
-                  type="time"
-                  id="new-session-time"
-                  defaultValue="09:00"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Registration Fee (SMP):</label>
-                <input
-                  type="number"
-                  step="0.00000001"
-                  id="new-session-fee"
-                  defaultValue="20000"
-                />
-              </div>
-            </div>
-            
-            <div className="modal-footer">
-              <button 
-                className="btn-secondary"
-                onClick={() => setShowCreateModal(false)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn-primary"
-                onClick={() => {
-                  const dateInput = document.getElementById('new-session-date') as HTMLInputElement;
-                  const timeInput = document.getElementById('new-session-time') as HTMLInputElement;
-                  const feeInput = document.getElementById('new-session-fee') as HTMLInputElement;
-                  
-                  if (dateInput.value) {
-                    handleCreateSession({
-                      session_date: dateInput.value,
-                      time_start: timeInput.value + ':00',
-                      registration_fee: parseFloat(feeInput.value)
-                    });
-                  }
-                }}
-              >
-                Create Session
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
@@ -550,6 +512,148 @@ const SessionsPage: React.FC = () => {
                 onClick={() => handleDeleteSession(showDeleteModal.id)}
               >
                 Delete Session
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Daily Settings Modal */}
+      {showSettingsModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Daily Session Settings</h3>
+              <button 
+                className="close-btn"
+                onClick={() => setShowSettingsModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="info-box">
+                <p><strong>Note:</strong> These settings will be used to automatically create daily sessions. 
+                Sessions will be created automatically when users try to access them if no session exists for that day.</p>
+              </div>
+              
+              <div className="form-group">
+                <label>Default Start Time:</label>
+                <input
+                  type="time"
+                  id="daily-time-start"
+                  defaultValue={dailySettings?.time_start ? dailySettings.time_start.substring(0, 5) : '09:00'}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Default Registration Fee (SMP):</label>
+                <input
+                  type="number"
+                  step="0.00000001"
+                  id="daily-registration-fee"
+                  defaultValue={dailySettings?.registration_fee || 20000}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    id="daily-is-active"
+                    defaultChecked={dailySettings?.is_active !== false}
+                  />
+                  Enable Automatic Session Creation
+                </label>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button 
+                className="btn-secondary"
+                onClick={() => setShowSettingsModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary"
+                onClick={() => {
+                  const timeInput = document.getElementById('daily-time-start') as HTMLInputElement;
+                  const feeInput = document.getElementById('daily-registration-fee') as HTMLInputElement;
+                  const activeInput = document.getElementById('daily-is-active') as HTMLInputElement;
+                  
+                  handleUpdateDailySettings({
+                    time_start: timeInput.value + ':00',
+                    registration_fee: parseFloat(feeInput.value),
+                    is_active: activeInput.checked
+                  });
+                }}
+              >
+                Save Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming Sessions Modal */}
+      {showUpcomingModal && (
+        <div className="modal-overlay">
+          <div className="modal-content large">
+            <div className="modal-header">
+              <h3>Upcoming Sessions (Next 7 Days)</h3>
+              <button 
+                className="close-btn"
+                onClick={() => setShowUpcomingModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="upcoming-sessions-list">
+                {upcomingSessions.length > 0 ? (
+                  upcomingSessions.map((session) => (
+                    <div key={session.id} className="upcoming-session-item">
+                      <div className="session-info">
+                        <div className="session-date">
+                          <Calendar size={16} />
+                          <span>{formatDate(session.session_date)}</span>
+                        </div>
+                        <div className="session-time">
+                          <Clock size={16} />
+                          <span>{formatTime(session.time_start)}</span>
+                        </div>
+                        <div className="session-fee">
+                          <DollarSign size={16} />
+                          <span>{formatCurrency(session.registration_fee)}</span>
+                        </div>
+                        <div className="session-registrations">
+                          <Users size={16} />
+                          <span>{session.registration_count || 0} registrations</span>
+                        </div>
+                      </div>
+                      <div className="session-status">
+                        {getStatusBadge(session.status)}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="no-sessions">
+                    <p>No upcoming sessions found.</p>
+                    <p>Sessions will be created automatically based on daily settings when users access them.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button 
+                className="btn-secondary"
+                onClick={() => setShowUpcomingModal(false)}
+              >
+                Close
               </button>
             </div>
           </div>
