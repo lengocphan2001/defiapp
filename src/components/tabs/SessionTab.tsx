@@ -27,6 +27,16 @@ const SessionTab: React.FC = () => {
   const [showCart, setShowCart] = useState(false);
   const [sellingNFTs, setSellingNFTs] = useState<NFT[]>([]);
   const [sellingNFTsLoading, setSellingNFTsLoading] = useState(false);
+  const [countdown, setCountdown] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [nextSession, setNextSession] = useState<Session | null>(null);
+  const [sessionStarted, setSessionStarted] = useState(false);
+  const [hasJoinedCurrentSession, setHasJoinedCurrentSession] = useState(false);
+  const [sessionDataValid, setSessionDataValid] = useState(false);
   
   // Toast state
   const [toast, setToast] = useState<{
@@ -55,6 +65,62 @@ const SessionTab: React.FC = () => {
     fetchSessionData();
   }, []);
 
+  // Set next session when availableSessions changes
+  useEffect(() => {
+    const next = getNextSession();
+    console.log('Next session data:', next);
+    setNextSession(next);
+    
+    // Validate session data
+    if (next && next.session_date && next.time_start) {
+      // Handle session_date - it might be a full ISO string
+      let sessionDateStr = next.session_date;
+      if (sessionDateStr && sessionDateStr.includes('T')) {
+        sessionDateStr = sessionDateStr.split('T')[0];
+      }
+      
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
+      
+      const isDateValid = dateRegex.test(sessionDateStr);
+      const isTimeValid = timeRegex.test(next.time_start);
+      
+      console.log('Session data validation:', {
+        sessionDate: next.session_date,
+        sessionDateStr,
+        timeStart: next.time_start,
+        isDateValid,
+        isTimeValid
+      });
+      
+      setSessionDataValid(isDateValid && isTimeValid);
+    } else {
+      setSessionDataValid(false);
+    }
+    
+    // Check if user has already joined the current session
+    if (next && sessionStarted) {
+      const isJoined = isRegisteredForSession(next.id);
+      setHasJoinedCurrentSession(isJoined);
+    }
+  }, [availableSessions, sessionStarted]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!nextSession || !nextSession.session_date || !nextSession.time_start) {
+      console.log('No valid session data for countdown');
+      return;
+    }
+
+    // Calculate initial countdown
+    calculateTimeUntilNextSession();
+
+    // Update countdown every second
+    const interval = setInterval(calculateTimeUntilNextSession, 1000);
+
+    return () => clearInterval(interval);
+  }, [nextSession]);
+
   const fetchSessionData = async () => {
     try {
       setLoading(true);
@@ -66,8 +132,11 @@ const SessionTab: React.FC = () => {
         sessionService.getUserSessionRegistrations()
       ]);
       
+      console.log('Sessions response:', sessionsResponse);
+      
       if (sessionsResponse.success) {
         setAvailableSessions(sessionsResponse.data);
+        console.log('Available sessions data:', sessionsResponse.data);
       } else {
         showToast('Không thể tải danh sách phiên giao dịch', 'error');
         return;
@@ -79,6 +148,7 @@ const SessionTab: React.FC = () => {
       
       // Get today's session info
       const sessionResponse = await sessionService.getTodaySession();
+      console.log('Today session response:', sessionResponse);
       if (sessionResponse.success && sessionResponse.data) {
         setSessionInfo(sessionResponse.data);
       } else {
@@ -100,31 +170,10 @@ const SessionTab: React.FC = () => {
           await fetchSellingNFTs();
         }
       }
-      
-    } catch (err) {
-      let errorMessage = 'Có lỗi xảy ra khi tải dữ liệu phiên';
-      
-      if (err instanceof Error) {
-        const errorText = err.message.toLowerCase();
-        
-        if (errorText.includes('no session found for today') || errorText.includes('không có phiên nào cho hôm nay')) {
-          errorMessage = 'Không có phiên giao dịch nào cho hôm nay. Vui lòng liên hệ admin để tạo phiên.';
-        } else if (errorText.includes('401') || errorText.includes('unauthorized')) {
-          errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
-        } else if (errorText.includes('403') || errorText.includes('forbidden')) {
-          errorMessage = 'Bạn không có quyền truy cập.';
-        } else if (errorText.includes('404') || errorText.includes('not found')) {
-          errorMessage = 'Không tìm thấy phiên giao dịch.';
-        } else if (errorText.includes('500') || errorText.includes('server error')) {
-          errorMessage = 'Lỗi máy chủ. Vui lòng thử lại sau.';
-        } else if (errorText.includes('network') || errorText.includes('fetch')) {
-          errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.';
-        } else {
-          errorMessage = err.message || 'Có lỗi xảy ra khi tải dữ liệu phiên';
-        }
-      }
-      
-      showToast(errorMessage, 'error');
+    } catch (error) {
+      console.error('Error fetching session data:', error);
+      setError('Có lỗi xảy ra khi tải dữ liệu phiên');
+      showToast('Có lỗi xảy ra khi tải dữ liệu phiên', 'error');
     } finally {
       setLoading(false);
     }
@@ -401,6 +450,222 @@ const SessionTab: React.FC = () => {
     });
   };
 
+  // Countdown timer functions
+  const calculateTimeUntilNextSession = () => {
+    if (!nextSession) return;
+
+    const now = new Date();
+    
+    // Handle session_date - it might be a full ISO string, so extract just the date part
+    let sessionDateStr = nextSession.session_date;
+    if (sessionDateStr && sessionDateStr.includes('T')) {
+      // If it's an ISO string, extract just the date part (YYYY-MM-DD)
+      sessionDateStr = sessionDateStr.split('T')[0];
+    }
+    
+    // Handle MySQL TIME format (HH:MM:SS)
+    let formattedTime = nextSession.time_start;
+    if (nextSession.time_start && nextSession.time_start.includes(':')) {
+      const timeParts = nextSession.time_start.split(':');
+      if (timeParts.length >= 2) {
+        formattedTime = `${timeParts[0]}:${timeParts[1]}`;
+      }
+    }
+    
+    const sessionTime = new Date(`${sessionDateStr}T${formattedTime}:00`);
+    
+    // Validate dates before calling toISOString()
+    const isValidNow = !isNaN(now.getTime());
+    const isValidSessionTime = !isNaN(sessionTime.getTime());
+    
+    console.log('calculateTimeUntilNextSession:', {
+      now: isValidNow ? now.toISOString() : 'Invalid date',
+      timeStart: nextSession.time_start,
+      formattedTime,
+      sessionTime: isValidSessionTime ? sessionTime.toISOString() : 'Invalid date',
+      sessionDateRaw: nextSession.session_date,
+      sessionDateStr,
+      timeStartRaw: nextSession.time_start
+    });
+    
+    // If any date is invalid, don't proceed
+    if (!isValidNow || !isValidSessionTime) {
+      console.error('Invalid date detected:', {
+        now: isValidNow,
+        sessionTime: isValidSessionTime,
+        sessionDateRaw: nextSession.session_date,
+        sessionDateStr,
+        timeStartRaw: nextSession.time_start
+      });
+      return;
+    }
+    
+    const timeDifference = sessionTime.getTime() - now.getTime();
+
+    if (timeDifference > 0) {
+      const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+
+      setCountdown({ days, hours, minutes, seconds });
+      setSessionStarted(false);
+    } else {
+      setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      setSessionStarted(true);
+    }
+  };
+
+  const formatSessionTime = (dateString: string, timeString: string): string => {
+    try {
+      console.log('formatSessionTime inputs:', { dateString, timeString });
+      
+      // Validate inputs
+      if (!dateString || !timeString) {
+        console.error('Missing date or time input:', { dateString, timeString });
+        return 'Thời gian không hợp lệ';
+      }
+      
+      // Handle dateString - it might be a full ISO string, so extract just the date part
+      let sessionDateStr = dateString;
+      if (dateString && dateString.includes('T')) {
+        // If it's an ISO string, extract just the date part (YYYY-MM-DD)
+        sessionDateStr = dateString.split('T')[0];
+      }
+      
+      // Handle MySQL TIME format (HH:MM:SS)
+      let formattedTime = timeString;
+      if (timeString && timeString.includes(':')) {
+        // If time is in HH:MM:SS format, take only HH:MM
+        const timeParts = timeString.split(':');
+        if (timeParts.length >= 2) {
+          formattedTime = `${timeParts[0]}:${timeParts[1]}`;
+        }
+      }
+      
+      // Validate time format
+      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+      if (!timeRegex.test(formattedTime)) {
+        console.error('Invalid time format:', formattedTime);
+        return 'Thời gian không hợp lệ';
+      }
+      
+      // Validate date format (YYYY-MM-DD)
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(sessionDateStr)) {
+        console.error('Invalid date format:', sessionDateStr);
+        return 'Ngày không hợp lệ';
+      }
+      
+      // Create date object for formatting
+      const date = new Date(`${sessionDateStr}T${formattedTime}:00`);
+      
+      console.log('Parsed date:', date);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.error('Invalid date parsed:', { dateString, sessionDateStr, timeString, formattedTime });
+        return 'Thời gian không hợp lệ';
+      }
+      
+      // Format the date and time separately to avoid "lúc" prefix
+      const dateFormatted = date.toLocaleDateString('vi-VN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      const timeFormatted = date.toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      return `${dateFormatted} ${timeFormatted}`;
+    } catch (error) {
+      console.error('Error formatting session time:', error, { dateString, timeString });
+      return 'Thời gian không hợp lệ';
+    }
+  };
+
+  const getNextSession = () => {
+    if (availableSessions.length === 0) return null;
+    
+    const now = new Date();
+    
+    // Find the closest next session (by date and time)
+    let closestSession = null;
+    let closestTime = Infinity;
+    
+    availableSessions.forEach(session => {
+      // Handle session_date - extract date part if it's an ISO string
+      let sessionDateStr = session.session_date;
+      if (sessionDateStr && sessionDateStr.includes('T')) {
+        sessionDateStr = sessionDateStr.split('T')[0];
+      }
+      
+      // Handle time format
+      let formattedTime = session.time_start;
+      if (session.time_start && session.time_start.includes(':')) {
+        const timeParts = session.time_start.split(':');
+        if (timeParts.length >= 2) {
+          formattedTime = `${timeParts[0]}:${timeParts[1]}`;
+        }
+      }
+      
+      const sessionDateTime = new Date(`${sessionDateStr}T${formattedTime}:00`);
+      
+      // If session time is in the future and closer than current closest
+      if (sessionDateTime > now && sessionDateTime.getTime() < closestTime) {
+        closestTime = sessionDateTime.getTime();
+        closestSession = session;
+      }
+    });
+    
+    console.log('Closest next session:', closestSession);
+    return closestSession || availableSessions[0];
+  };
+
+  const handleJoinCurrentSession = async () => {
+    if (!nextSession || !sessionStarted) return;
+    
+    try {
+      setRegistrationLoading(true);
+      
+      const response = await sessionService.registerForSpecificSession(nextSession.id);
+      
+      if (response.success) {
+        setHasJoinedCurrentSession(true);
+        showToast('Đã tham gia phiên giao dịch!', 'success');
+        // Refresh data to update registrations and user balance
+        await fetchSessionData();
+        // Refresh user data to update balance
+        window.location.reload();
+      } else {
+        showToast(response.message, 'error');
+      }
+    } catch (err) {
+      let errorMessage = 'Có lỗi xảy ra khi tham gia phiên';
+      
+      if (err instanceof Error) {
+        const errorText = err.message.toLowerCase();
+        
+        if (errorText.includes('insufficient balance') || errorText.includes('không đủ số dư')) {
+          errorMessage = 'Số dư không đủ để tham gia phiên. Vui lòng nạp thêm tiền.';
+        } else if (errorText.includes('already registered') || errorText.includes('đã đăng ký')) {
+          errorMessage = 'Bạn đã tham gia phiên này rồi.';
+          setHasJoinedCurrentSession(true);
+        } else {
+          errorMessage = err.message || 'Có lỗi xảy ra khi tham gia phiên';
+        }
+      }
+      
+      showToast(errorMessage, 'error');
+    } finally {
+      setRegistrationLoading(false);
+    }
+  };
+
   const loadNFTsForSession = async (session: Session) => {
     try {
       setSelectedSession(session);
@@ -448,8 +713,74 @@ const SessionTab: React.FC = () => {
           <span className="session-icon">🕐</span>
           <h2 style={{color: '#fff'}}>Phiên giao dịch</h2>
         </div>
-
       </div>
+
+      {/* Countdown Timer */}
+      {nextSession && sessionDataValid ? (
+        <div className="countdown-section">
+          <div className="countdown-header">
+            <h3>Phiên tiếp theo</h3>
+            <p className="session-time">
+              {formatSessionTime(nextSession.session_date, nextSession.time_start)}
+            </p>
+          </div>
+          {!sessionStarted ? (
+            <div className="countdown-timer">
+              <div className="countdown-item">
+                <span className="countdown-value">{countdown.days.toString().padStart(2, '0')}</span>
+                <span className="countdown-label">Ngày</span>
+              </div>
+              <div className="countdown-separator">:</div>
+              <div className="countdown-item">
+                <span className="countdown-value">{countdown.hours.toString().padStart(2, '0')}</span>
+                <span className="countdown-label">Giờ</span>
+              </div>
+              <div className="countdown-separator">:</div>
+              <div className="countdown-item">
+                <span className="countdown-value">{countdown.minutes.toString().padStart(2, '0')}</span>
+                <span className="countdown-label">Phút</span>
+              </div>
+              <div className="countdown-separator">:</div>
+              <div className="countdown-item">
+                <span className="countdown-value">{countdown.seconds.toString().padStart(2, '0')}</span>
+                <span className="countdown-label">Giây</span>
+              </div>
+            </div>
+          ) : (
+            <div className="session-started">
+              <div className="session-started-message">
+                <h4>🎉 Phiên giao dịch đã bắt đầu!</h4>
+                <p>Nhấn "Tham gia" để xem sản phẩm và giao dịch</p>
+              </div>
+              <button 
+                className="join-session-btn"
+                onClick={handleJoinCurrentSession}
+                disabled={registrationLoading || hasJoinedCurrentSession}
+              >
+                {registrationLoading ? 'Đang tham gia...' : 
+                 hasJoinedCurrentSession ? 'Đã tham gia' : 'Tham gia'}
+              </button>
+            </div>
+          )}
+        </div>
+      ) : nextSession && !sessionDataValid ? (
+        <div className="countdown-section">
+          <div className="countdown-header">
+            <h3>Phiên tiếp theo</h3>
+            <p className="session-time">Dữ liệu phiên không hợp lệ</p>
+          </div>
+          <div className="session-error">
+            <p>Không thể hiển thị thời gian phiên. Vui lòng liên hệ admin.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="countdown-section">
+          <div className="countdown-header">
+            <h3>Phiên tiếp theo</h3>
+            <p className="session-time">Đang tải thông tin phiên...</p>
+          </div>
+        </div>
+      )}
 
       {/* Cart Button */}
       {cart.length > 0 && (
@@ -643,8 +974,8 @@ const SessionTab: React.FC = () => {
         </div>
       )}
 
-      {/* Show NFTs only if registered and session is active */}
-      {isRegistered && sessionInfo?.status === 'active' ? (
+      {/* Show NFTs only if session has started, user has joined, and session is active */}
+      {sessionStarted && hasJoinedCurrentSession && sessionInfo?.status === 'active' ? (
         <>
           <div className="products-section">
             <h2 className="products-title">Sản phẩm hôm nay</h2>
@@ -684,17 +1015,18 @@ const SessionTab: React.FC = () => {
             )}
           </div>
         </>
-      ) : !isRegistered && sessionInfo?.status === 'active' ? (
-        <div className="registration-required">
-          <div>
-            
+      ) : sessionStarted && !hasJoinedCurrentSession ? (
+        <div className="join-prompt">
+          <div className="join-prompt-card">
+            <h3>Phiên giao dịch đã bắt đầu!</h3>
+            <p>Vui lòng nhấn "Tham gia" ở trên để xem sản phẩm và giao dịch.</p>
           </div>
         </div>
-      ) : sessionInfo?.status === 'closed' ? (
-        <div className="session-closed">
-          <div className="session-closed-card">
-            <h3>Phiên đã đóng</h3>
-            <p>Phiên giao dịch hôm nay đã kết thúc. Vui lòng chờ phiên tiếp theo.</p>
+      ) : !sessionStarted ? (
+        <div className="waiting-prompt">
+          <div className="waiting-prompt-card">
+            <h3>Đang chờ phiên giao dịch</h3>
+            <p>Phiên giao dịch sẽ bắt đầu khi đồng hồ đếm ngược kết thúc.</p>
           </div>
         </div>
       ) : null}

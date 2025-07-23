@@ -29,6 +29,8 @@ const NFTTab: React.FC = () => {
   const [openingNFT, setOpeningNFT] = useState<string | null>(null);
   const loadingRef = useRef(true);
   const [todaySessionId, setTodaySessionId] = useState<number | null>(null);
+  const [showSellConfirm, setShowSellConfirm] = useState(false);
+  const [selectedNFTForSale, setSelectedNFTForSale] = useState<NFT | null>(null);
   
   // Toast state
   const [toast, setToast] = useState<{
@@ -221,16 +223,30 @@ const NFTTab: React.FC = () => {
   };
 
   const handleSellNFT = async (nftId: string) => {
+    // Find the NFT to show confirmation
+    const nft = myNFTs.find(n => n.id === nftId);
+    if (nft) {
+      setSelectedNFTForSale(nft);
+      setShowSellConfirm(true);
+    }
+  };
+
+  const confirmSellNFT = async () => {
+    if (!selectedNFTForSale) return;
+    
     try {
-      setSellingNFT(nftId);
+      setSellingNFT(selectedNFTForSale.id);
       
-      const response = await nftService.sellNFT(nftId);
+      const response = await nftService.sellNFT(selectedNFTForSale.id);
       
       if (response.success) {
         showToast(response.message, 'success');
         // Refresh data to update NFT status
         await fetchMyNFTs();
         await fetchTransactionHistory();
+        // Close modal
+        setShowSellConfirm(false);
+        setSelectedNFTForSale(null);
       } else {
         showToast(response.message || 'Bán NFT thất bại', 'error');
       }
@@ -478,6 +494,77 @@ const NFTTab: React.FC = () => {
         isVisible={toast.isVisible} 
         onClose={hideToast} 
       />
+
+      {/* Sell Confirmation Modal */}
+      {showSellConfirm && selectedNFTForSale && (
+        <div className="modal-overlay" onClick={() => setShowSellConfirm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Xác nhận bán NFT</h3>
+              <button 
+                className="close-btn"
+                onClick={() => setShowSellConfirm(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="sell-confirmation">
+                <div className="nft-info">
+                  <h4>{selectedNFTForSale.name}</h4>
+                  <p>ID: {selectedNFTForSale.id}</p>
+                </div>
+                
+                <div className="fee-details">
+                  <div className="fee-row">
+                    <span>Giá hiện tại:</span>
+                    <span>{formatPrice(selectedNFTForSale.price)} SMP</span>
+                  </div>
+                  <div className="fee-row">
+                    <span>Lợi nhuận 1.5%=</span>
+                    <span>+{(parseFloat(selectedNFTForSale.price) * 0.015).toFixed(2)} SMP</span>
+                  </div>
+                  <div className="fee-row">
+                    <span>Phí gửi bán 3.4%=</span>
+                    <span>+{(parseFloat(selectedNFTForSale.price) * 0.034).toFixed(2)} SMP</span>
+                  </div>
+                  <div className="fee-row total">
+                    <span>Tổng cộng 4.9%=</span>
+                    <span>+{(parseFloat(selectedNFTForSale.price) * 0.049).toFixed(2)} SMP</span>
+                  </div>
+                  <div className="fee-row final-price">
+                    <span>Giá mới:</span>
+                    <span>{(parseFloat(selectedNFTForSale.price) * 1.049).toFixed(2)} SMP</span>
+                  </div>
+                </div>
+                
+                <div className="warning-message">
+                  <p>⚠️ Bạn sẽ bị trừ {formatPrice((parseFloat(selectedNFTForSale.price) * 0.034).toString())} SMP từ số dư</p>
+                  <p>💰 Khi bán được, bạn sẽ nhận thêm {(parseFloat(selectedNFTForSale.price) * 0.015).toFixed(2)} SMP lợi nhuận</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button 
+                className="btn-secondary"
+                onClick={() => setShowSellConfirm(false)}
+                disabled={sellingNFT === selectedNFTForSale.id}
+              >
+                Hủy
+              </button>
+              <button 
+                className="btn-primary"
+                onClick={confirmSellNFT}
+                disabled={sellingNFT === selectedNFTForSale.id}
+              >
+                {sellingNFT === selectedNFTForSale.id ? 'Đang bán...' : 'Xác nhận bán'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

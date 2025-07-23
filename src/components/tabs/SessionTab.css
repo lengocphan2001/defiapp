@@ -28,6 +28,225 @@
   color: #1e293b;
 }
 
+/* Countdown Timer */
+.countdown-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  color: white;
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+}
+
+.countdown-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.countdown-header h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+}
+
+.session-time {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.countdown-timer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+
+.countdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+}
+
+.countdown-value {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px 8px;
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  min-width: 44px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.countdown-label {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.countdown-separator {
+  font-size: 24px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: -20px;
+}
+
+/* Responsive countdown */
+@media (max-width: 768px) {
+  .countdown-timer {
+    gap: 12px;
+  }
+  
+  .countdown-item {
+    min-width: 50px;
+  }
+  
+  .countdown-value {
+    font-size: 20px;
+    padding: 10px 6px;
+    min-width: 38px;
+  }
+  
+  .countdown-separator {
+    font-size: 20px;
+    margin-top: -16px;
+  }
+  
+  .countdown-label {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .countdown-timer {
+    gap: 8px;
+  }
+  
+  .countdown-item {
+    min-width: 40px;
+  }
+  
+  .countdown-value {
+    font-size: 18px;
+    padding: 8px 4px;
+    min-width: 32px;
+  }
+  
+  .countdown-separator {
+    font-size: 18px;
+    margin-top: -14px;
+  }
+}
+
+/* Session started state */
+.session-started {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.session-started-message h4 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+}
+
+.session-started-message p {
+  margin: 0 0 20px 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+}
+
+.join-session-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.join-session-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+.join-session-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Prompt cards */
+.join-prompt,
+.waiting-prompt {
+  margin: 24px 0;
+}
+
+.join-prompt-card,
+.waiting-prompt-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.join-prompt-card h3,
+.waiting-prompt-card h3 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.join-prompt-card p,
+.waiting-prompt-card p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.join-prompt-card {
+  border-left: 4px solid #10b981;
+}
+
+.waiting-prompt-card {
+  border-left: 4px solid #f59e0b;
+}
+
+/* Session error state */
+.session-error {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.session-error p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  background: rgba(239, 68, 68, 0.2);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
 /* Session Info */
 .session-info {
   display: flex;

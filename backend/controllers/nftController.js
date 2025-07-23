@@ -481,6 +481,34 @@ const nftController = {
           throw new Error('NFT chưa được thanh toán. Vui lòng thanh toán trước khi bán.');
         }
 
+        // Calculate new price (current price + 1.5% + 3.4% = +4.9%)
+        // Breakdown:
+        // - 1.5%: Profit for the seller when NFT is sold
+        // - 3.4%: Fee for listing the NFT
+        // - Total: 4.9% price increase
+        const currentPrice = parseFloat(nft.price);
+        const priceIncrease = currentPrice * 0.049; // 4.9%
+        const newPrice = currentPrice + priceIncrease;
+
+        // Calculate fee (3.4% of current price) - deducted from seller's balance
+        const feeAmount = currentPrice * 0.034; // 3.4%
+
+        // Check user's balance for fee
+        const [userRows] = await connection.execute(
+          'SELECT balance FROM users WHERE id = ?',
+          [userId]
+        );
+
+        if (userRows.length === 0) {
+          throw new Error('Người dùng không tồn tại');
+        }
+
+        const userBalance = parseFloat(userRows[0].balance);
+
+        if (userBalance < feeAmount) {
+          throw new Error(`Số dư không đủ để trả phí. Cần: ${feeAmount.toFixed(2)} SMP, Có: ${userBalance.toFixed(2)} SMP`);
+        }
+
         // Get next day's session
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -497,10 +525,16 @@ const nftController = {
 
         const nextDaySession = sessionRows[0];
 
-        // Update NFT to be available for next day session
+        // Deduct fee from user's balance
         await connection.execute(
-          'UPDATE nfts SET session_id = ?, type = "sell", status = "available", updated_at = NOW() WHERE id = ?',
-          [nextDaySession.id, id]
+          'UPDATE users SET balance = balance - ? WHERE id = ?',
+          [feeAmount, userId]
+        );
+
+        // Update NFT to be available for next day session with new price
+        await connection.execute(
+          'UPDATE nfts SET session_id = ?, type = "sell", status = "available", price = ?, updated_at = NOW() WHERE id = ?',
+          [nextDaySession.id, newPrice, id]
         );
 
         // Create SMP transaction for listing NFT for sale
@@ -512,9 +546,9 @@ const nftController = {
         `, [
           userId,
           null, // No recipient for listing
-          0, // No amount for listing
+          feeAmount, // Fee amount
           'nft_sale',
-          `Listed NFT ${id} for next day session`,
+          `Listed NFT ${id} for next day session - Fee: ${feeAmount.toFixed(2)} SMP`,
           id,
           'nft_transaction',
           'completed'
@@ -524,10 +558,14 @@ const nftController = {
 
         res.json({
           success: true,
-          message: 'NFT đã được đăng bán cho phiên giao dịch ngày mai!',
+          message: `NFT đã được đăng bán cho phiên giao dịch ngày mai! Phí: ${feeAmount.toFixed(2)} SMP, Giá mới: ${newPrice.toFixed(2)} SMP`,
           data: {
             nft_id: id,
-            next_session_date: tomorrowDate
+            next_session_date: tomorrowDate,
+            old_price: currentPrice,
+            new_price: newPrice,
+            fee_amount: feeAmount,
+            new_balance: userBalance - feeAmount
           }
         });
 

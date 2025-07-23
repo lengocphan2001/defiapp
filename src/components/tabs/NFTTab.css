@@ -387,3 +387,192 @@
     padding: 8px 16px;
   }
 } 
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  color: #374151;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Sell confirmation styles */
+.sell-confirmation {
+  text-align: center;
+}
+
+.nft-info {
+  margin-bottom: 24px;
+}
+
+.nft-info h4 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.nft-info p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.fee-details {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.fee-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.fee-row:last-child {
+  border-bottom: none;
+}
+
+.fee-row.total {
+  font-weight: 600;
+  font-size: 16px;
+  color: #059669;
+  border-top: 2px solid #d1fae5;
+  margin-top: 8px;
+  padding-top: 12px;
+}
+
+.fee-row.final-price {
+  font-weight: 700;
+  font-size: 18px;
+  color: #1f2937;
+  border-top: 2px solid #e5e7eb;
+  margin-top: 12px;
+  padding-top: 12px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  padding: 12px 8px;
+}
+
+.warning-message {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 16px;
+}
+
+.warning-message p {
+  margin: 0;
+  color: #92400e;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #059669;
+}
+
+.btn-primary:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #4b5563;
+}
+
+.btn-secondary:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+} 
