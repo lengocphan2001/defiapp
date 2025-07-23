@@ -114,6 +114,16 @@ class NFTService {
     }
   }
 
+  // Update NFT owner (admin only)
+  async updateNFTOwner(id: string, ownerId: number): Promise<{ success: boolean; message: string; data: any }> {
+    try {
+      const response = await apiService.patch<{ success: boolean; message: string; data: any }>(`/nfts/${id}/owner`, { owner_id: ownerId });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   // Delete NFT
   async deleteNFT(id: string): Promise<{ success: boolean; message: string }> {
     try {

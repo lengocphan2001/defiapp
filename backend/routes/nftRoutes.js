@@ -36,6 +36,9 @@ router.post('/:id/pay', nftController.payNFT);
 // Sell NFT (set for next day session)
 router.post('/:id/sell', nftController.sellNFT);
 
+// Update NFT owner (admin only)
+router.patch('/:id/owner', nftController.updateNFTOwner);
+
 // Open NFT (refund 90% and cancel)
 router.post('/:id/open', nftController.openNFT);
 

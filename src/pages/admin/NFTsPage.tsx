@@ -9,11 +9,12 @@ import {
   Eye,
   RefreshCw,
   DollarSign,
-  User,
+  User as UserIcon,
   Calendar
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import nftService from '../../services/nftService';
+import userService, { User } from '../../services/userService';
 import { NFT, CreateNFTData } from '../../types';
 import { formatBalance, formatPrice } from '../../utils';
 import './NFTsPage.css';
@@ -28,13 +29,17 @@ const NFTsPage: React.FC = () => {
   const [modalType, setModalType] = useState<'view' | 'edit' | 'delete' | 'create'>('view');
   const [formData, setFormData] = useState({
     name: '',
-    price: ''
+    price: '',
+    owner_id: ''
   });
   const [formLoading, setFormLoading] = useState(false);
   const [formMessage, setFormMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedOwner, setSelectedOwner] = useState<string | null>(null);
 
   useEffect(() => {
     loadNFTs();
+    loadUsers();
   }, []);
 
   const loadNFTs = async () => {
@@ -46,6 +51,15 @@ const NFTsPage: React.FC = () => {
       console.error('Failed to load NFTs:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUsers = async () => {
+    try {
+      const response = await userService.getAllUsers();
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Failed to load users:', error);
     }
   };
 
@@ -75,7 +89,8 @@ const NFTsPage: React.FC = () => {
     setSelectedNFT(nft);
     setFormData({
       name: nft.name,
-      price: nft.price
+      price: nft.price,
+      owner_id: nft.owner_id.toString()
     });
     setModalType('edit');
     setShowModal(true);
@@ -84,6 +99,17 @@ const NFTsPage: React.FC = () => {
   const handleDeleteNFT = (nft: NFT) => {
     setSelectedNFT(nft);
     setModalType('delete');
+    setShowModal(true);
+  };
+
+  const handleChangeOwner = (nft: NFT) => {
+    setSelectedNFT(nft);
+    setFormData({
+      name: nft.name,
+      price: nft.price,
+      owner_id: nft.owner_id.toString()
+    });
+    setModalType('edit');
     setShowModal(true);
   };
 
@@ -101,21 +127,12 @@ const NFTsPage: React.FC = () => {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async () => {
     if (!formData.name.trim() || !formData.price.trim()) {
-      setFormMessage({ type: 'error', text: 'Vui lòng điền đầy đủ thông tin' });
-      return;
-    }
-
-    const price = parseFloat(formData.price);
-    if (isNaN(price) || price <= 0) {
-      setFormMessage({ type: 'error', text: 'Giá phải là số dương' });
+      setFormMessage({ type: 'error', text: 'Please fill in all required fields' });
       return;
     }
 
@@ -125,28 +142,31 @@ const NFTsPage: React.FC = () => {
     try {
       if (modalType === 'create') {
         await nftService.createNFT({
-          name: formData.name.trim(),
-          price,
-          type: 'sell' // Ensure type is 'sell' for new NFTs
+          name: formData.name,
+          price: parseFloat(formData.price)
         });
-        setFormMessage({ type: 'success', text: 'Tạo NFT thành công!' });
+        setFormMessage({ type: 'success', text: 'NFT created successfully!' });
       } else if (modalType === 'edit' && selectedNFT) {
-        await nftService.updateNFTPrice(selectedNFT.id, price);
-        setFormMessage({ type: 'success', text: 'Cập nhật NFT thành công!' });
+        // Update price
+        await nftService.updateNFTPrice(selectedNFT.id, parseFloat(formData.price));
+        
+        // Update owner if changed
+        if (formData.owner_id && parseInt(formData.owner_id) !== selectedNFT.owner_id) {
+          await nftService.updateNFTOwner(selectedNFT.id, parseInt(formData.owner_id));
+        }
+        
+        setFormMessage({ type: 'success', text: 'NFT updated successfully!' });
       }
-
-      // Reset form and reload data
+      
       setTimeout(() => {
         setShowModal(false);
-        setSelectedNFT(null);
-        setFormData({ name: '', price: '' });
-        setFormMessage(null);
-        loadNFTs();
+        resetForm();
+        loadNFTs(); // Reload the list
       }, 1500);
     } catch (error) {
       setFormMessage({ 
         type: 'error', 
-        text: error instanceof Error ? error.message : 'Có lỗi xảy ra' 
+        text: error instanceof Error ? error.message : 'An error occurred' 
       });
     } finally {
       setFormLoading(false);
@@ -154,9 +174,12 @@ const NFTsPage: React.FC = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', price: '' });
+    setFormData({
+      name: '',
+      price: '',
+      owner_id: ''
+    });
     setFormMessage(null);
-    setFormLoading(false);
   };
 
   const handleStatusChange = async (nftId: string, newStatus: string) => {
@@ -276,6 +299,13 @@ const NFTsPage: React.FC = () => {
                     title="Edit NFT"
                   >
                     <Edit size={16} />
+                  </button>
+                  <button
+                    className="action-btn owner"
+                    onClick={() => handleChangeOwner(nft)}
+                    title="Change Owner"
+                  >
+                    <UserIcon size={16} />
                   </button>
                   <select
                     className="status-select"
@@ -405,6 +435,23 @@ const NFTsPage: React.FC = () => {
                       min="0"
                     />
                   </div>
+                  {modalType === 'edit' && (
+                    <div className="form-group">
+                      <label className="form-label">Owner:</label>
+                      <select
+                        className="form-input"
+                        value={formData.owner_id}
+                        onChange={(e) => handleInputChange('owner_id', e.target.value)}
+                      >
+                        <option value="">Select owner...</option>
+                        {users.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.username} (ID: {user.id})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   {formMessage && (
                     <div className={`form-message ${formMessage.type}`}>
                       {formMessage.text}

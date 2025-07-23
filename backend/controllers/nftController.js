@@ -712,6 +712,87 @@ const nftController = {
         error: error.message
       });
     }
+  },
+
+  // Update NFT owner (admin only)
+  async updateNFTOwner(req, res) {
+    try {
+      const { id } = req.params;
+      const { owner_id } = req.body;
+
+      // Check if user is admin
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Admin access required'
+        });
+      }
+
+      // Validate input
+      if (!owner_id || isNaN(parseInt(owner_id))) {
+        return res.status(400).json({
+          success: false,
+          message: 'Valid owner_id is required'
+        });
+      }
+
+      const connection = await require('../config/database').pool.getConnection();
+      
+      try {
+        await connection.beginTransaction();
+
+        // Check if NFT exists
+        const [nftRows] = await connection.execute(
+          'SELECT * FROM nfts WHERE id = ?',
+          [id]
+        );
+
+        if (nftRows.length === 0) {
+          throw new Error('NFT không tồn tại');
+        }
+
+        // Check if new owner exists
+        const [userRows] = await connection.execute(
+          'SELECT id, username FROM users WHERE id = ?',
+          [owner_id]
+        );
+
+        if (userRows.length === 0) {
+          throw new Error('Người dùng không tồn tại');
+        }
+
+        // Update NFT owner
+        await connection.execute(
+          'UPDATE nfts SET owner_id = ?, updated_at = NOW() WHERE id = ?',
+          [owner_id, id]
+        );
+
+        await connection.commit();
+
+        res.json({
+          success: true,
+          message: `Đã chuyển NFT cho người dùng ${userRows[0].username}`,
+          data: {
+            nft_id: id,
+            new_owner_id: owner_id,
+            new_owner_name: userRows[0].username
+          }
+        });
+
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+
+    } catch (error) {
+      console.error('Error updating NFT owner:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    }
   }
 };
 

@@ -234,12 +234,23 @@
 }
 
 .action-btn.edit:hover {
-  background: #d97706;
-  transform: scale(1.1);
+  background: #3b82f6;
+  color: white;
+}
+
+.action-btn.owner {
+  background: #8b5cf6;
+  color: white;
+}
+
+.action-btn.owner:hover {
+  background: #7c3aed;
+  color: white;
 }
 
 .action-btn.delete {
   background: #ef4444;
+  color: white;
 }
 
 .action-btn.delete:hover {
